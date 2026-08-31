@@ -81,7 +81,7 @@
 
 **Антон Анатольевич Кузнецов**  
 📍 Воронеж, Россия  
-📧 [an.cf@yandex.ru](mailto:an.cf@yandex.ru) | [anton1kuzneczov@yandex.ru](mailto:anton1kuzneczov@yandex.ru)  
+📧 [an.cf@yandex.ru](mailto:an.cf@yandex.ru) | 
 🎵 Музыкальный канал: [«ВолшебствО» на Rutube](https://rutube.ru/)
 
 ---
