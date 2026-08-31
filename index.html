@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <!-- ✅ ИСПРАВЛЕНИЕ 1: viewport-fit=cover и максимальная совместимость -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <link rel="icon" href="favicon.ico" type="image/x-icon" />
+    <title>Змея и Мелодия — музыкальные плитки</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        /* ✅ ИСПРАВЛЕНИЕ 1: 100dvh вместо 100vh для корректной работы на мобильных браузерах */
+        body { margin: 0; overflow: hidden; background: #050510; font-family: 'Inter', sans-serif; color: #fff; user-select: none; -webkit-touch-callout: none; touch-action: none; width: 100vw; height: 100dvh; }
+        canvas { position: fixed !important; top: 0; left: 0; z-index: 1; width: 100vw; height: 100dvh; display: none; touch-action: none; }
+        canvas.game-active { display: block !important; }
+        
+        .page { position: absolute; top: 0; left: 0; width: 100vw; height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.5s, transform 0.5s; transform: scale(0.95); z-index: 100; overflow-y: auto; padding: 20px; background: rgba(5,5,16,0.95); }
+        .page.active { opacity: 1; pointer-events: all; transform: scale(1); }
+        #page-game { background: transparent !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+        
+        #page-description { position: relative; background: #0a0a1a; overflow: hidden; }
+        #page-description .bg-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; z-index: 0; filter: brightness(0.85) saturate(1.1); }
+        #page-description .bg-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,20,0.75); z-index: 1; }
+        #page-description>*:not(.bg-image):not(.bg-overlay) { position: relative; z-index: 2; }
+        .page-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, rgba(20,10,40,0.85) 0%, rgba(5,5,16,0.95) 100%); backdrop-filter: blur(8px); z-index: -1; }
+        
+        .glass-btn-3d { position: relative; padding: 18px 48px; font-size: 18px; font-weight: 800; color: #f0e0ff; background: rgba(255,255,255,0.04); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(200,150,255,0.3); border-radius: 20px; cursor: pointer; transition: all 0.3s cubic-bezier(0.25,0.8,0.25,1); box-shadow: 0 8px 32px rgba(200,150,255,0.15), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -2px 0 rgba(0,0,0,0.2), 0 0 40px rgba(200,150,255,0.1); text-transform: uppercase; letter-spacing: 1.5px; overflow: hidden; margin: 12px; z-index: 1; animation: glassPulse 3s ease-in-out infinite; touch-action: none; }
+        .glass-btn-3d::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2) 0%, transparent 60%); pointer-events: none; mix-blend-mode: overlay; animation: shineMove 6s linear infinite; }
+        .glass-btn-3d::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50%; background: linear-gradient(to bottom, rgba(255,255,255,0.15), transparent); border-radius: 20px 20px 0 0; pointer-events: none; }
+        @keyframes shineMove { 0% { transform: translate(-20%,-20%) rotate(0deg); } 100% { transform: translate(20%,20%) rotate(10deg); } }
+        @keyframes glassPulse { 0%,100% { box-shadow: 0 8px 32px rgba(200,150,255,0.15), inset 0 1px 0 rgba(255,255,255,0.3), 0 0 40px rgba(200,150,255,0.1); border-color: rgba(200,150,255,0.3); } 50% { box-shadow: 0 8px 48px rgba(200,150,255,0.35), inset 0 1px 0 rgba(255,255,255,0.5), 0 0 70px rgba(200,150,255,0.25); border-color: rgba(220,180,255,0.6); } }
+        .glass-btn-3d:hover { transform: translateY(-4px) scale(1.03); border-color: rgba(200,150,255,0.8); color: #fff; text-shadow: 0 0 12px rgba(200,150,255,0.9); box-shadow: 0 12px 40px rgba(200,150,255,0.4), inset 0 1px 0 rgba(255,255,255,0.4), 0 0 80px rgba(200,150,255,0.3); animation: none; }
+        .glass-btn-3d:active { transform: translateY(1px) scale(0.97); box-shadow: 0 4px 16px rgba(0,0,0,0.4), inset 0 2px 4px rgba(0,0,0,0.3); }
+        .glass-btn-3d.secondary { color: #aaccff; border-color: rgba(100,150,255,0.3); animation: glassPulseBlue 3s ease-in-out infinite; }
+        @keyframes glassPulseBlue { 0%,100% { box-shadow: 0 8px 32px rgba(100,150,255,0.15), inset 0 1px 0 rgba(255,255,255,0.3), 0 0 40px rgba(100,150,255,0.1); border-color: rgba(100,150,255,0.3); } 50% { box-shadow: 0 8px 48px rgba(100,150,255,0.35), inset 0 1px 0 rgba(255,255,255,0.5), 0 0 70px rgba(100,150,255,0.25); border-color: rgba(150,200,255,0.6); } }
+        .glass-btn-3d.secondary:hover { border-color: rgba(100,150,255,0.8); text-shadow: 0 0 12px rgba(100,150,255,0.9); box-shadow: 0 12px 40px rgba(100,150,255,0.4), inset 0 1px 0 rgba(255,255,255,0.4), 0 0 80px rgba(100,150,255,0.3); animation: none; }
+        
+        .touch-btn { font-size: 28px !important; padding: 12px 22px !important; margin: 4px !important; min-width: 60px; min-height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 16px !important; box-shadow: 0 4px 20px rgba(200,150,255,0.2), inset 0 1px 0 rgba(255,255,255,0.3), 0 0 30px rgba(200,150,255,0.08) !important; animation: glassPulse 3s ease-in-out infinite !important; touch-action: none !important; }
+        .touch-btn:active { transform: scale(0.92) !important; box-shadow: 0 2px 8px rgba(200,150,255,0.4), inset 0 1px 0 rgba(255,255,255,0.2) !important; }
+        
+        .title-main { font-size: clamp(36px,8vw,64px); font-weight: 800; background: linear-gradient(135deg,#cc99ff 0%,#8866cc 50%,#4488ff 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 40px rgba(200,150,255,0.3); margin-bottom: 16px; text-align: center; line-height: 1.1; z-index: 1; }
+        .subtitle { font-size: clamp(16px,3vw,22px); color: #e0f0ff; text-align: center; max-width: 600px; line-height: 1.6; margin-bottom: 20px; padding: 0 20px; z-index: 1; position: relative; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+        
+        .support-block { width: 100%; max-width: 95vw; background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); border-radius: 30px; padding: 10px 20px; z-index: 1; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; font-size: 13px; color: #ccbbee; text-align: center; margin-top: 20px; }
+        .support-block .highlight { color: #cc99ff; font-weight: 800; }
+        .support-block .phone { color: #fff; letter-spacing: 0.5px; font-weight: bold; }
+        .support-block .copy-btn { background: rgba(200,150,255,0.15); border: 1px solid #cc99ff; color: #cc99ff; padding: 4px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: bold; transition: all 0.2s; display: flex; align-items: center; gap: 4px; }
+        .support-block .copy-btn:hover { background: rgba(200,150,255,0.3); transform: scale(1.05); }
+        .support-block a { color: #88ddff; text-decoration: none; font-weight: bold; display: flex; align-items: center; gap: 4px; }
+        
+        #game-hud { position: absolute; top: 20px; left: 20px; right: 20px; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; z-index: 50; flex-wrap: wrap; gap: 10px; }
+        .hud-panel { background: rgba(10,10,30,0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 12px 20px; color: #fff; font-size: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); pointer-events: auto; }
+        .hud-score { font-size: 22px; font-weight: 800; color: #ffdd88; text-shadow: 0 0 10px rgba(255,221,136,0.4); }
+        .hud-timer { font-size: 24px; font-weight: 800; color: #88ddff; text-shadow: 0 0 10px rgba(136,221,255,0.4); min-width: 80px; text-align: center; }
+        .hud-timer.warning { color: #ff8866; text-shadow: 0 0 10px rgba(255,136,102,0.6); }
+        
+        .result-score { font-size: clamp(48px,10vw,80px); font-weight: 800; color: #ffdd88; text-shadow: 0 0 30px rgba(255,221,136,0.5); margin: 20px 0; }
+        .result-label { font-size: 20px; color: #ccbbee; text-transform: uppercase; letter-spacing: 2px; }
+        .jump-indicator { position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); color: #6f6; font-size: 16px; font-weight: bold; background: rgba(0,30,0,0.6); padding: 6px 20px; border-radius: 20px; border: 1px solid #2a5a2a; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 50; text-shadow: 0 0 10px #4caf50; }
+        .jump-indicator.active { opacity: 1; }
+        
+        #touch-controls { position: absolute; bottom: 90px; left: 0; right: 0; display: flex; justify-content: space-around; align-items: center; padding: 0 12px; z-index: 55; pointer-events: none; flex-wrap: wrap; gap: 6px; }
+        #touch-controls > div { pointer-events: auto; display: flex; gap: 8px; align-items: center; }
+        
+        @media (max-width:700px) { 
+            #game-hud { flex-direction: row; flex-wrap: wrap; justify-content: space-between; } 
+            .hud-panel { font-size: 13px; padding: 8px 14px; } 
+            .hud-score, .hud-timer { font-size: 18px; } 
+            .glass-btn-3d { padding: 14px 32px; font-size: 16px; } 
+            .touch-btn { font-size: 22px !important; padding: 10px 16px !important; min-width: 50px; min-height: 50px; } 
+            #touch-controls { bottom: 80px; padding: 0 6px; gap: 4px; } 
+        }
+        
+        #webgl-error { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); color: #ff8888; font-size: 24px; text-align: center; padding: 40px; z-index: 999; flex-direction: column; justify-content: center; align-items: center; }
+        #webgl-error a { color: #88ddff; }
+    </style>
+</head>
+<body>
+
+    <div id="webgl-error">
+        <h2>⚠️ Ваш браузер не поддерживает WebGL</h2>
+        <p>Для игры требуется современный браузер с поддержкой 3D-графики.</p>
+        <p>Попробуйте обновить браузер или использовать Chrome / Edge / Firefox.</p>
+        <p style="margin-top:20px;font-size:16px;color:#aaa;">Если вы на мобильном устройстве, попробуйте открыть в Chrome для Android или Safari на iOS 14+.</p>
+    </div>
+
+    <div id="page-description" class="page active">
+        <img class="bg-image" src="foto.webp" alt="Фон" loading="lazy" onerror="this.style.display='none'">
+        <div class="bg-overlay"></div>
+        <!-- ✅ ИСПРАВЛЕНИЕ 2: onerror скрывает битую иконку -->
+        <img src="favicon.ico" alt="Логотип" style="width:144px;height:144px;margin-bottom:16px;border-radius:24px;box-shadow:0 0 30px rgba(200,150,255,0.4);border:2px solid rgba(255,255,255,0.2);z-index:1;" onerror="this.style.display='none'">
+        <h1 class="title-main">Змея</h1>
+        <h1 class="title-main" style="font-size:clamp(32px,7vw,56px);margin-top:-10px;">И</h1>
+        <h1 class="title-main" style="font-size:clamp(32px,7vw,56px);margin-top:-10px;">Мелодия</h1>
+        <div style="flex-grow:1;"></div>
+        <button class="glass-btn-3d" id="startButton" style="margin:0 auto 16px auto;z-index:1;">▶ Начать игру</button>
+        <div class="support-block">
+            <span class="highlight">🤝 ПОДДЕРЖАТЬ ПРОЕКТ 💙</span>
+            <span>Приложение бесплатное.</span>
+            <span>Перевод: <strong class="phone">8-920-227-56-76</strong></span>
+            <button class="copy-btn" onclick="copyPhone()">📋 Копировать</button>
+            <span>❤️ Спасибо!</span>
+            <a href="https://ancf-hue.github.io/" target="_blank">👉 Каталог Anti-AI Shield</a>
+        </div>
+    </div>
+
+    <div id="page-game" class="page" style="justify-content:flex-start;">
+        <img src="favicon.ico" alt="Логотип" style="position:absolute;top:15px;left:50%;transform:translateX(-50%);width:96px;height:96px;border-radius:16px;z-index:60;box-shadow:0 4px 12px rgba(0,0,0,0.5);border:2px solid rgba(255,255,255,0.2);" onerror="this.style.display='none'">
+        <div id="game-hud">
+            <div class="hud-panel" style="display:flex;align-items:center;gap:10px;">
+                <span class="hud-score">🎵 Раунд: <span id="score">1</span>/5</span>
+            </div>
+            <div class="hud-panel hud-timer" id="timerDisplay">⏱ 3:00</div>
+        </div>
+        <div id="touch-controls">
+            <div><button class="touch-btn glass-btn-3d" data-action="left">◀</button><button class="touch-btn glass-btn-3d" data-action="right">▶</button></div>
+            <div><button class="touch-btn glass-btn-3d" data-action="jump">⬆</button></div>
+            <div><button class="touch-btn glass-btn-3d" data-action="forward">▲</button><button class="touch-btn glass-btn-3d" data-action="backward">▼</button></div>
+        </div>
+        <div class="jump-indicator" id="jumpIndicator">⬆ ПРЫЖОК!</div>
+    </div>
+
+    <div id="page-result" class="page">
+        <div class="page-bg"></div>
+        <img src="favicon.ico" alt="Логотип" style="width:128px;height:128px;margin-bottom:16px;border-radius:20px;box-shadow:0 4px 12px rgba(0,0,0,0.3);border:2px solid rgba(255,255,255,0.2);" onerror="this.style.display='none'">
+        <div class="result-label" id="result-label">⏱ Время вышло!</div>
+        <div class="result-score" id="result-emoji">🎵</div>
+        <p class="subtitle" id="result-text">Попробуйте ещё раз!</p>
+        <div style="display:flex;flex-wrap:wrap;justify-content:center;">
+            <button class="glass-btn-3d" onclick="startGame()">🔄 Играть снова</button>
+            <button class="glass-btn-3d secondary" onclick="showPage('page-description')">🏠 В меню</button>
+        </div>
+    </div>
+
+    <script>
+    // === Проверка WebGL до загрузки игры ===
+    (function checkWebGL() {
+        try {
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            if (!gl) {
+                document.getElementById('webgl-error').style.display = 'flex';
+                throw new Error('WebGL не поддерживается');
+            }
+        } catch (e) {
+            document.getElementById('webgl-error').style.display = 'flex';
+            console.error('WebGL ошибка:', e);
+        }
+    })();
+
+    // === Основной скрипт ===
+    (function main() {
+        if (typeof THREE === 'undefined') {
+            alert('Не удалось загрузить библиотеку Three.js. Проверьте подключение к интернету.');
+            return;
+        }
+
+        console.log('🟢 Игра "Змея и Мелодия" инициализируется...');
+
+        const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth < 768;
+        const isSlow = isMobile || (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4);
+        console.log('Режим:', isSlow ? 'энергосберегающий (мобильный/слабый)' : 'полный');
+
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ru-RU';
+                utterance.rate = 1.05;
+                utterance.pitch = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        window.copyPhone = function() {
+            const phone = "8-920-227-56-76";
+            navigator.clipboard.writeText(phone).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                if (btn) {
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = "✅ Скопировано!";
+                    btn.style.background = "rgba(200,150,255,0.4)";
+                    btn.style.color = "#ffffff";
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.style.background = "rgba(200,150,255,0.15)";
+                        btn.style.color = "#cc99ff";
+                    }, 2000);
+                }
+            }).catch(() => {
+                const textArea = document.createElement("textarea");
+                textArea.value = phone;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand("copy");
+                document.body.removeChild(textArea);
+                alert("Номер скопирован: " + phone);
+            });
+        };
+
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+            }
+            if (audioCtx && audioCtx.state === 'suspended') { 
+                audioCtx.resume().catch(() => {}); 
+            }
+        }
+
+        function playTone(freq, duration, type = 'sine', volume = 0.3) {
+            if (!audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {}
+        }
+
+        const NOTE_FREQS = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 1174.66, 1318.5];
+        function playNote(i, volume = 0.3) {
+            initAudio();
+            if (!audioCtx) return;
+            const f = NOTE_FREQS[i];
+            playTone(f, 0.4, 'sine', volume);
+            playTone(f * 2, 0.25, 'sine', volume * 0.3);
+        }
+        function playErrorSound() {
+            initAudio(); if (!audioCtx) return;
+            playTone(180, 0.3, 'sawtooth', 0.2);
+            setTimeout(() => playTone(140, 0.4, 'sawtooth', 0.15), 150);
+        }
+        function playRoundSound() {
+            initAudio(); if (!audioCtx) return;
+            playTone(659, 0.12, 'sine', 0.25);
+            setTimeout(() => playTone(880, 0.12, 'sine', 0.25), 100);
+            setTimeout(() => playTone(1318, 0.25, 'sine', 0.25), 200);
+        }
+        function playWinSound() {
+            initAudio(); if (!audioCtx) return;
+            const melody = [523, 659, 784, 1046, 784, 1046, 1318];
+            melody.forEach((f, i) => setTimeout(() => playTone(f, 0.25, 'sine', 0.3), i * 140));
+        }
+        function playJumpSound() {
+            initAudio(); if (!audioCtx) return;
+            playTone(220, 0.2, 'square', 0.15);
+            setTimeout(() => playTone(300, 0.15, 'square', 0.1), 80);
+        }
+        
+        document.addEventListener('click', () => initAudio(), { once: true });
+        document.addEventListener('keydown', () => initAudio(), { once: true });
+        document.addEventListener('touchstart', () => initAudio(), { once: true, passive: true });
+
+        let round = 1;
+        const ROUND_TARGET = 5;
+        let isGameActive = false;
+        let animationId = null;
+        let timerInterval = null;
+        let gameTimeLeft = 180;
+        const MAX_TIME = 180;
+        let stunTime = 0;
+
+        let melodyState = 'show';
+        let sequence = [];
+        let seqIndex = 0;
+        let showIndex = 0;
+        let showTimer = 0;
+        let waitTimer = 0;
+        let lastTile = -1;
+
+        const _desiredCamPos = new THREE.Vector3();
+        const _cameraOffset = new THREE.Vector3(0, 18, 14);
+
+        const sceneColor = 0x141433;
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(sceneColor);
+        scene.fog = new THREE.Fog(sceneColor, 60, 160);
+
+        const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 300);
+        camera.position.set(0, 22, 18);
+
+        const renderer = new THREE.WebGLRenderer({ 
+            antialias: !isSlow, 
+            alpha: true,
+            powerPreference: isSlow ? "low-power" : "high-performance"
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = !isSlow;
+        if (!isSlow) {
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.shadowMap.bias = 0.0005;
+        }
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 2.2;
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, isSlow ? 1.5 : 2));
+        document.body.appendChild(renderer.domElement);
+        renderer.domElement.style.display = 'none';
+
+        // Обработка потери контекста (страховка от чёрного экрана)
+        renderer.domElement.addEventListener('webglcontextlost', function(event) {
+            event.preventDefault();
+            isGameActive = false;
+            if (timerInterval) clearInterval(timerInterval);
+            alert('Графический контекст был потерян. Пожалуйста, обновите страницу.');
+        }, false);
+
+        // OrbitControls (встроенный, как в оригинале)
+        THREE.OrbitControls = function(object, domElement) {
+            this.object = object; this.domElement = domElement; this.enabled = true; this.target = new THREE.Vector3();
+            this.minDistance = 0; this.maxDistance = Infinity; this.minPolarAngle = 0; this.maxPolarAngle = Math.PI;
+            this.enableDamping = false; this.dampingFactor = 0.05; this.enableZoom = true; this.enableRotate = true; this.enablePan = false;
+            var scope = this, STATE = { NONE: -1, ROTATE: 0 }, state = STATE.NONE;
+            var spherical = new THREE.Spherical(), sphericalDelta = new THREE.Spherical();
+            var rotateStart = new THREE.Vector2(), rotateEnd = new THREE.Vector2(), rotateDelta = new THREE.Vector2();
+            var offset = new THREE.Vector3();
+            var quat = new THREE.Quaternion().setFromUnitVectors(object.up, new THREE.Vector3(0, 1, 0));
+            var quatInverse = quat.clone().invert();
+            this.update = function() {
+                offset.copy(scope.object.position).sub(scope.target); offset.applyQuaternion(quat);
+                spherical.setFromVector3(offset); spherical.theta += sphericalDelta.theta; spherical.phi += sphericalDelta.phi;
+                spherical.phi = Math.max(scope.minPolarAngle, Math.min(scope.maxPolarAngle, spherical.phi)); spherical.makeSafe();
+                spherical.radius = Math.max(scope.minDistance, Math.min(scope.maxDistance, spherical.radius));
+                offset.setFromSpherical(spherical); offset.applyQuaternion(quatInverse);
+                scope.object.position.copy(scope.target).add(offset); scope.object.lookAt(scope.target);
+                if (scope.enableDamping) { sphericalDelta.theta *= (1 - scope.dampingFactor); sphericalDelta.phi *= (1 - scope.dampingFactor); }
+                else { sphericalDelta.set(0, 0, 0); }
+            };
+            function rotateLeft(angle) { sphericalDelta.theta -= angle; }
+            function rotateUp(angle) { sphericalDelta.phi -= angle; }
+            function onMouseDown(event) { if (!scope.enabled || !scope.enableRotate) return; event.preventDefault(); state = STATE.ROTATE; rotateStart.set(event.clientX, event.clientY); document.addEventListener('mousemove', onMouseMove, false); document.addEventListener('mouseup', onMouseUp, false); }
+            function onMouseMove(event) { if (!scope.enabled || state !== STATE.ROTATE) return; event.preventDefault(); rotateEnd.set(event.clientX, event.clientY); rotateDelta.subVectors(rotateEnd, rotateStart); rotateLeft(2 * Math.PI * rotateDelta.x / domElement.clientWidth); rotateUp(2 * Math.PI * rotateDelta.y / domElement.clientHeight); rotateStart.copy(rotateEnd); }
+            function onMouseUp() { document.removeEventListener('mousemove', onMouseMove, false); document.removeEventListener('mouseup', onMouseUp, false); state = STATE.NONE; }
+            function onMouseWheel(event) { if (!scope.enabled || !scope.enableZoom) return; event.preventDefault(); if (event.deltaY < 0) { spherical.radius *= 0.95; } else if (event.deltaY > 0) { spherical.radius *= 1.05; } }
+            function onTouchStart(event) { if (!scope.enabled) return; event.preventDefault(); if (event.touches.length === 1 && scope.enableRotate) { state = STATE.ROTATE; rotateStart.set(event.touches[0].pageX, event.touches[0].pageY); } else if (event.touches.length === 2 && scope.enableZoom) { var dx = event.touches[0].pageX - event.touches[1].pageX; var dy = event.touches[0].pageY - event.touches[1].pageY; rotateStart.set(0, Math.sqrt(dx * dx + dy * dy)); } }
+            function onTouchMove(event) { if (!scope.enabled) return; event.preventDefault(); if (event.touches.length === 1 && state === STATE.ROTATE) { rotateEnd.set(event.touches[0].pageX, event.touches[0].pageY); rotateDelta.subVectors(rotateEnd, rotateStart); rotateLeft(2 * Math.PI * rotateDelta.x / domElement.clientWidth); rotateUp(2 * Math.PI * rotateDelta.y / domElement.clientHeight); rotateStart.copy(rotateEnd); } else if (event.touches.length === 2 && scope.enableZoom) { var dx = event.touches[0].pageX - event.touches[1].pageX; var dy = event.touches[0].pageY - event.touches[1].pageY; var distance = Math.sqrt(dx * dx + dy * dy); rotateEnd.set(0, distance); var factor = rotateEnd.y / rotateStart.y; spherical.radius *= factor; rotateStart.copy(rotateEnd); } }
+            function onTouchEnd() { state = STATE.NONE; }
+            domElement.addEventListener('contextmenu', function(e) { e.preventDefault(); }, false);
+            domElement.addEventListener('mousedown', onMouseDown, false);
+            domElement.addEventListener('wheel', onMouseWheel, { passive: false });
+            domElement.addEventListener('touchstart', onTouchStart, { passive: false });
+            domElement.addEventListener('touchend', onTouchEnd, false);
+            domElement.addEventListener('touchmove', onTouchMove, { passive: false });
+        };
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.08;
+        controls.maxPolarAngle = Math.PI / 2.05;
+        controls.minPolarAngle = 0.1;
+        controls.enableKeys = false;
+        controls.minDistance = 5;
+        controls.maxDistance = 80;
+        controls.enablePan = true;
+
+        const hemiLight = new THREE.HemisphereLight(0x334466, 0x111122, isSlow ? 0.8 : 0.6);
+        scene.add(hemiLight);
+        const ambient = new THREE.AmbientLight(0x334455, isSlow ? 0.7 : 0.5);
+        scene.add(ambient);
+        const mainLight = new THREE.DirectionalLight(0x8899ff, isSlow ? 1.0 : 0.8);
+        mainLight.position.set(25, 60, 20);
+        if (!isSlow) {
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 1024;
+            mainLight.shadow.mapSize.height = 1024;
+            mainLight.shadow.camera.near = 0.5;
+            mainLight.shadow.camera.far = 180;
+            mainLight.shadow.camera.left = -90;
+            mainLight.shadow.camera.right = 90;
+            mainLight.shadow.camera.top = 90;
+            mainLight.shadow.camera.bottom = -90;
+            mainLight.shadow.bias = -0.001;
+        }
+        scene.add(mainLight);
+        const backLight = new THREE.PointLight(0x4488ff, isSlow ? 0.4 : 0.8, 60);
+        backLight.position.set(0, 15, -30);
+        scene.add(backLight);
+        const rimLight = new THREE.PointLight(0xff8844, isSlow ? 0.3 : 0.6, 50);
+        rimLight.position.set(-30, 10, 30);
+        scene.add(rimLight);
+
+        const starGeo = new THREE.BufferGeometry();
+        const starCount = isSlow ? 150 : 300;
+        const starPositions = new Float32Array(starCount * 3);
+        for (let i = 0; i < starCount; i++) {
+            const a = Math.random() * Math.PI * 2;
+            const elev = Math.random() * Math.PI * 0.45 + 0.1;
+            const r = 180;
+            starPositions[i*3] = Math.cos(a) * Math.cos(elev) * r;
+            starPositions[i*3+1] = Math.sin(elev) * r;
+            starPositions[i*3+2] = Math.sin(a) * Math.cos(elev) * r;
+        }
+        starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+        const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: isSlow ? 0.8 : 1.2, transparent: true, opacity: 0.9 });
+        scene.add(new THREE.Points(starGeo, starMat));
+
+        const moonMat = new THREE.MeshBasicMaterial({ color: 0xddeeff });
+        const moon = new THREE.Mesh(new THREE.SphereGeometry(isSlow ? 4 : 6, 16, 16), moonMat);
+        moon.position.set(70, 90, -80);
+        scene.add(moon);
+
+        const FIELD_RADIUS = 30;
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x222244, roughness: 0.9, emissive: 0x0a0a1a, emissiveIntensity: isSlow ? 0.2 : 0.3 });
+        const floor = new THREE.Mesh(new THREE.CircleGeometry(FIELD_RADIUS + 8, 48), floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -1.6;
+        if (!isSlow) floor.receiveShadow = true;
+        scene.add(floor);
+
+        const stageRing = new THREE.Mesh(
+            new THREE.TorusGeometry(13.5, 0.25, 8, 48),
+            new THREE.MeshBasicMaterial({ color: 0x6644aa, transparent: true, opacity: 0.6 })
+        );
+        stageRing.rotation.x = -Math.PI / 2;
+        stageRing.position.y = -1.5;
+        scene.add(stageRing);
+
+        const TILE_COUNT = 8;
+        const TILE_RADIUS = 9;
+        const TILE_COLORS = [0xff4444, 0xff9933, 0xffee33, 0x66dd44, 0x33ccdd, 0x4466ff, 0xaa44ff, 0xff66cc];
+        const tiles = [];
+        const usePhysical = !isSlow;
+
+        for (let i = 0; i < TILE_COUNT; i++) {
+            const angle = (i / TILE_COUNT) * Math.PI * 2 - Math.PI / 2;
+            const x = Math.cos(angle) * TILE_RADIUS;
+            const z = Math.sin(angle) * TILE_RADIUS;
+            const color = new THREE.Color(TILE_COLORS[i]);
+            let mat;
+            if (usePhysical) {
+                mat = new THREE.MeshPhysicalMaterial({
+                    color: color.clone().multiplyScalar(0.5), roughness: 0.05, metalness: 0.95, transparent: true, opacity: 0.7,
+                    emissive: color, emissiveIntensity: 0.3, clearcoat: 1.0, clearcoatRoughness: 0.1, envMapIntensity: 1.2,
+                });
+            } else {
+                mat = new THREE.MeshStandardMaterial({
+                    color: color.clone().multiplyScalar(0.5), roughness: 0.2, metalness: 0.3, transparent: true, opacity: 0.8,
+                    emissive: color, emissiveIntensity: 0.4,
+                });
+            }
+            const mesh = new THREE.Mesh(new THREE.CylinderGeometry(2.0, 2.2, 0.35, 24), mat);
+            mesh.position.set(x, -1.45, z);
+            if (!isSlow) { mesh.castShadow = true; mesh.receiveShadow = true; }
+            scene.add(mesh);
+            const beamMat = new THREE.MeshBasicMaterial({ color: TILE_COLORS[i], transparent: true, opacity: 0.2, side: THREE.DoubleSide, depthWrite: false });
+            const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.8, 7, 12, 1, true), beamMat);
+            beam.position.set(x, 2.0, z);
+            beam.visible = false;
+            scene.add(beam);
+            tiles.push({ mesh, mat, beam, beamMat, baseColor: color, flash: 0, x, z, pulse: 0 });
+        }
+
+        function flashTile(i) {
+            tiles[i].flash = 1.0;
+            tiles[i].beam.visible = true;
+            setTimeout(() => { tiles[i].beam.visible = false; }, 800);
+        }
+
+        function updateTiles(delta, elapsed) {
+            for (let t of tiles) {
+                t.flash = Math.max(0, t.flash - delta * 2.5);
+                t.mat.emissiveIntensity = (usePhysical ? 0.3 : 0.4) + t.flash * 2.5;
+                const lift = 1 + t.flash * 0.12;
+                t.mesh.scale.set(lift, 1, lift);
+                if (t.beam.visible) {
+                    t.beamMat.opacity = 0.2 + Math.sin(elapsed * 6 + t.x) * 0.1;
+                    t.beam.rotation.y += delta * 1.5;
+                }
+            }
+        }
+
+        const treeCount = isSlow ? 25 : 40;
+        const trees = [];
+        function createTree(x, z, scale = 1) {
+            const g = new THREE.Group();
+            const HEIGHT_SCALE = 3.0;
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x3a2a2a, roughness: 0.8 });
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.15 * scale, 0.25 * scale, 1.8 * scale * HEIGHT_SCALE, 6), trunkMat);
+            trunk.position.y = 0.9 * scale * HEIGHT_SCALE;
+            if (!isSlow) trunk.castShadow = true;
+            g.add(trunk);
+            const leafMat = new THREE.MeshStandardMaterial({ color: 0x1a4a2a, roughness: 0.6, emissive: 0x0a2a1a, emissiveIntensity: 0.15 });
+            const crown = new THREE.Mesh(new THREE.ConeGeometry(1.1 * scale, 1.6 * scale * HEIGHT_SCALE, 6), leafMat);
+            crown.position.y = 2.0 * scale * HEIGHT_SCALE + 0.2 * scale * HEIGHT_SCALE;
+            if (!isSlow) crown.castShadow = true;
+            g.add(crown);
+            const leaf2 = new THREE.Mesh(new THREE.ConeGeometry(0.9 * scale, 1.2 * scale * HEIGHT_SCALE, 6), leafMat);
+            leaf2.position.y = 2.8 * scale * HEIGHT_SCALE + 0.2 * scale * HEIGHT_SCALE;
+            if (!isSlow) leaf2.castShadow = true;
+            g.add(leaf2);
+            g.position.set(x, -1.4, z);
+            g.rotation.y = Math.random() * Math.PI * 2;
+            return g;
+        }
+
+        for (let i = 0; i < treeCount; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const radius = 20 + Math.random() * 12;
+            const x = Math.cos(angle) * radius;
+            const z = Math.sin(angle) * radius;
+            const scale = 0.6 + Math.random() * 1.0;
+            trees.push({ x, z, r: 0.35 + scale * 0.2 });
+            scene.add(createTree(x, z, scale));
+        }
+
+        const particleCount = isSlow ? 60 : 120;
+        const particlePool = [];
+        const particleGeo = new THREE.SphereGeometry(0.1, 6, 6);
+        for (let i = 0; i < particleCount; i++) {
+            const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1 });
+            const mesh = new THREE.Mesh(particleGeo, mat);
+            mesh.visible = false;
+            scene.add(mesh);
+            particlePool.push({ mesh, velocity: new THREE.Vector3(), life: 0, isActive: false });
+        }
+
+        function spawnNoteParticles(position, colorHex) {
+            let spawned = 0;
+            const maxSpawn = isSlow ? 10 : 20;
+            for (let p of particlePool) {
+                if (!p.isActive && spawned < maxSpawn) {
+                    p.isActive = true; p.life = 1.0; p.mesh.visible = true;
+                    p.mesh.material.color.setHex(colorHex);
+                    p.mesh.position.copy(position); p.mesh.position.y += 0.5;
+                    const speed = 1.5 + Math.random() * 3;
+                    const theta = Math.random() * Math.PI * 2;
+                    p.velocity.set(Math.cos(theta) * speed * 0.6, 2 + Math.random() * 3, Math.sin(theta) * speed * 0.6);
+                    spawned++;
+                }
+                if (spawned >= maxSpawn) break;
+            }
+        }
+
+        function updateParticles(delta) {
+            for (let p of particlePool) {
+                if (!p.isActive) continue;
+                p.life -= delta * 1.4;
+                if (p.life <= 0) { p.isActive = false; p.mesh.visible = false; continue; }
+                p.velocity.y -= 2 * delta;
+                p.mesh.position.addScaledVector(p.velocity, delta);
+                const s = p.life * 0.9 + 0.2;
+                p.mesh.scale.set(s, s, s);
+                p.mesh.material.opacity = p.life;
+            }
+        }
+
+        function buildSequence() {
+            const len = 2 + round;
+            sequence = [];
+            for (let i = 0; i < len; i++) sequence.push(Math.floor(Math.random() * TILE_COUNT));
+        }
+
+        function startShow() {
+            melodyState = 'show'; showIndex = 0; showTimer = 0.8;
+        }
+
+        function updateMelody(delta) {
+            if (melodyState === 'show') {
+                showTimer -= delta;
+                if (showTimer <= 0) {
+                    if (showIndex < sequence.length) {
+                        const tileIdx = sequence[showIndex];
+                        flashTile(tileIdx); playNote(tileIdx);
+                        showIndex++; showTimer = 0.7;
+                    } else {
+                        melodyState = 'play'; seqIndex = 0;
+                    }
+                }
+            } else if (melodyState === 'wait') {
+                waitTimer -= delta;
+                if (waitTimer <= 0) startShow();
+            }
+        }
+
+        function pressTile(i) {
+            if (melodyState !== 'play') return;
+            flashTile(i); playNote(i);
+            spawnNoteParticles(new THREE.Vector3(tiles[i].x, -1.2, tiles[i].z), TILE_COLORS[i]);
+            if (sequence[seqIndex] === i) {
+                seqIndex++;
+                if (seqIndex >= sequence.length) {
+                    playRoundSound();
+                    if (round >= ROUND_TARGET) {
+                        playWinSound();
+                        speakText("Поздравляю! Змея собрала все пять мелодий! Настоящий музыкант!");
+                        finishGame(true); return;
+                    }
+                    round++;
+                    document.getElementById('score').textContent = round;
+                    melodyState = 'wait'; waitTimer = 1.6;
+                    buildSequence();
+                }
+            } else {
+                playErrorSound();
+                melodyState = 'wait'; waitTimer = 1.2;
+            }
+        }
+
+        const snakeGroup = new THREE.Group();
+        scene.add(snakeGroup);
+        const SEGMENTS = 38;
+        const BASE_SEGMENT_RADIUS = 0.48;
+        const SEGMENT_SPACING = 0.55;
+        const snakeBody = [];
+        const FIXED_SCALE = 1.0;
+
+        const bodyMat = usePhysical 
+            ? new THREE.MeshPhysicalMaterial({ color: 0xc82020, roughness: 0.05, metalness: 0.95, transparent: true, opacity: 0.75, emissive: 0x880000, emissiveIntensity: 0.8, clearcoat: 1.0, clearcoatRoughness: 0.1, envMapIntensity: 1.5 })
+            : new THREE.MeshStandardMaterial({ color: 0xc82020, roughness: 0.3, metalness: 0.4, transparent: true, opacity: 0.8, emissive: 0x880000, emissiveIntensity: 0.6 });
+
+        const baseRadii = [];
+        for (let i = 0; i < SEGMENTS; i++) baseRadii.push(BASE_SEGMENT_RADIUS * (1 - (i / (SEGMENTS - 1)) * 0.7));
+
+        for (let i = 0; i < SEGMENTS; i++) {
+            const geo = new THREE.SphereGeometry(baseRadii[i], isSlow ? 16 : 32, isSlow ? 16 : 32);
+            const mesh = new THREE.Mesh(geo, bodyMat.clone());
+            if (!isSlow) { mesh.castShadow = true; mesh.receiveShadow = true; }
+            mesh.userData.baseRadius = baseRadii[i];
+            snakeGroup.add(mesh);
+            snakeBody.push(mesh);
+            mesh.scale.set(FIXED_SCALE, FIXED_SCALE, FIXED_SCALE);
+        }
+
+        const headMat = usePhysical
+            ? new THREE.MeshPhysicalMaterial({ color: 0xe03030, roughness: 0.05, metalness: 0.95, transparent: true, opacity: 0.8, emissive: 0xaa2222, emissiveIntensity: 1.0, clearcoat: 1.0, clearcoatRoughness: 0.1 })
+            : new THREE.MeshStandardMaterial({ color: 0xe03030, roughness: 0.2, metalness: 0.3, transparent: true, opacity: 0.9, emissive: 0xaa2222, emissiveIntensity: 0.8 });
+            
+        const headGeo = new THREE.SphereGeometry(0.88, isSlow ? 24 : 48, isSlow ? 24 : 48);
+        headGeo.scale(1, 0.85, 1.45);
+        const head = new THREE.Mesh(headGeo, headMat);
+        if (!isSlow) head.castShadow = true;
+        snakeGroup.add(head);
+        head.scale.set(FIXED_SCALE, FIXED_SCALE * 0.85, FIXED_SCALE * 1.45);
+
+        const headLight = new THREE.PointLight(0xff6644, isSlow ? 2.0 : 4.0, isSlow ? 15 : 25);
+        headLight.position.set(0, 1.2, 2.2);
+        head.add(headLight);
+
+        function createEye(offsetX, offsetY, offsetZ) {
+            const group = new THREE.Group();
+            const whiteMat = new THREE.MeshPhysicalMaterial({ color: 0xf8f8ff, roughness: 0.1, metalness: 0.2, transparent: true, opacity: 0.9 });
+            const white = new THREE.Mesh(new THREE.SphereGeometry(0.24, 20, 20), whiteMat);
+            white.scale.set(1, 1.1, 0.9); group.add(white);
+            const irisMat = new THREE.MeshPhysicalMaterial({ color: 0xffcc00, emissive: 0xffaa00, emissiveIntensity: 1.5, roughness: 0.2, metalness: 0.1 });
+            const iris = new THREE.Mesh(new THREE.SphereGeometry(0.15, 18, 18), irisMat);
+            iris.position.z = 0.17; iris.scale.set(1, 1.2, 0.5); group.add(iris);
+            const pupilMat = new THREE.MeshPhysicalMaterial({ color: 0x111111, roughness: 0.0 });
+            const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.075, 14, 14), pupilMat);
+            pupil.scale.set(0.5, 1.6, 0.4); pupil.position.z = 0.24; group.add(pupil);
+            group.position.set(offsetX, offsetY, offsetZ);
+            return group;
+        }
+        head.add(createEye(-0.42, 0.35, 0.78));
+        head.add(createEye(0.42, 0.35, 0.78));
+
+        const mouth = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.045, 12, 18, Math.PI), new THREE.MeshPhysicalMaterial({ color: 0x5a0808, emissive: 0x330000, emissiveIntensity: 0.6, roughness: 0.3 }));
+        mouth.position.set(0, -0.28, 0.98);
+        mouth.rotation.z = Math.PI;
+        head.add(mouth);
+
+        const tongueGroup = new THREE.Group();
+        const tongueBase = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.4, 6), new THREE.MeshPhysicalMaterial({ color: 0xff2244, emissive: 0x880011, emissiveIntensity: 0.8, roughness: 0.2, metalness: 0.3 }));
+        tongueBase.rotation.x = Math.PI / 2;
+        tongueBase.position.z = 0.2;
+        tongueGroup.add(tongueBase);
+        tongueGroup.position.set(0, -0.28, 1.08);
+        head.add(tongueGroup);
+
+        const segmentPositions = [];
+        for (let i = 0; i < SEGMENTS; i++) segmentPositions.push(new THREE.Vector3(-i * SEGMENT_SPACING, 0, 0));
+        const headPosition = new THREE.Vector3(0, 0, 0);
+        let currentDirectionAngle = 0;
+        let targetDirectionAngle = 0;
+        const moveDirection = new THREE.Vector3(1, 0, 0);
+        const BASE_SPEED = 4.5;
+        const MAX_PATH = 600;
+        const pathHistory = [];
+        for (let i = 0; i < MAX_PATH; i++) pathHistory.push(new THREE.Vector3(0, 0, 0));
+        let pathWriteIndex = 0;
+        let pathValidCount = 0;
+
+        let isJumping = false;
+        let jumpVelocity = 0;
+        let jumpHeight = 0;
+        const GRAVITY = 14;
+        const JUMP_SPEED = 6.5;
+        let eatAnimation = 0;
+        let speedMultiplier = 1.0;
+
+        document.addEventListener('keydown', (e) => {
+            if (!isGameActive) return;
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (!isJumping) {
+                    playJumpSound(); isJumping = true; jumpVelocity = JUMP_SPEED; jumpHeight = 0;
+                    document.getElementById('jumpIndicator').classList.add('active');
+                    setTimeout(() => document.getElementById('jumpIndicator').classList.remove('active'), 400);
+                }
+                return;
+            }
+            if (e.repeat) return;
+            let newAngle = null;
+            if (e.key === 'ArrowLeft') newAngle = currentDirectionAngle - Math.PI / 2;
+            else if (e.key === 'ArrowRight') newAngle = currentDirectionAngle + Math.PI / 2;
+            else if (e.key === 'ArrowUp') { speedMultiplier = Math.min(2.0, speedMultiplier + 0.5); e.preventDefault(); return; }
+            else if (e.key === 'ArrowDown') { speedMultiplier = Math.max(0.0, speedMultiplier - 0.5); e.preventDefault(); return; }
+            if (newAngle !== null) {
+                targetDirectionAngle = Math.atan2(Math.sin(newAngle), Math.cos(newAngle));
+                e.preventDefault();
+            }
+        });
+
+        function setupTouchControls() {
+            const buttons = document.querySelectorAll('.touch-btn');
+            const actions = {
+                left: () => { targetDirectionAngle = currentDirectionAngle - Math.PI / 2; },
+                right: () => { targetDirectionAngle = currentDirectionAngle + Math.PI / 2; },
+                jump: () => {
+                    if (!isJumping && isGameActive) {
+                        playJumpSound(); isJumping = true; jumpVelocity = JUMP_SPEED; jumpHeight = 0;
+                        document.getElementById('jumpIndicator').classList.add('active');
+                        setTimeout(() => document.getElementById('jumpIndicator').classList.remove('active'), 400);
+                    }
+                }
+            };
+            buttons.forEach(btn => {
+                const action = btn.dataset.action;
+                if (!action) return;
+                const start = (e) => {
+                    e.preventDefault();
+                    // ✅ ИСПРАВЛЕНИЕ 3: Гарантированный запуск аудио при первом касании кнопок на iOS
+                    initAudio(); 
+                    if (!isGameActive) return;
+                    if (action === 'forward') { speedMultiplier = Math.min(2.0, speedMultiplier + 0.5); return; }
+                    if (action === 'backward') { speedMultiplier = Math.max(0.0, speedMultiplier - 0.5); return; }
+                    if (actions[action]) actions[action]();
+                };
+                const end = (e) => { e.preventDefault(); };
+                btn.addEventListener('touchstart', start, { passive: false });
+                btn.addEventListener('touchend', end, { passive: false });
+                btn.addEventListener('touchcancel', end, { passive: false });
+                btn.addEventListener('mousedown', start);
+                btn.addEventListener('mouseup', end);
+                btn.addEventListener('mouseleave', end);
+            });
+        }
+        setTimeout(setupTouchControls, 100);
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(gameTimeLeft / 60);
+            const seconds = Math.floor(gameTimeLeft % 60);
+            const display = document.getElementById('timerDisplay');
+            display.textContent = `⏱ ${minutes}:${seconds.toString().padStart(2, '0')}`;
+            if (gameTimeLeft <= 10) display.classList.add('warning');
+            else display.classList.remove('warning');
+        }
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (!isGameActive) return;
+                gameTimeLeft = Math.max(0, gameTimeLeft - 1);
+                updateTimerDisplay();
+                if (gameTimeLeft <= 0) {
+                    clearInterval(timerInterval); timerInterval = null;
+                    finishGame(false);
+                }
+            }, 1000);
+        }
+
+        const clock = new THREE.Clock();
+        let lastFrameTime = 0;
+        const FPS_LIMIT = 60;
+        const FRAME_INTERVAL = 1000 / FPS_LIMIT;
+        const cameraTarget = new THREE.Vector3(0, 0, 0);
+        const HEAD_RADIUS = 0.88;
+        const HEAD_SCALE_Z = 1.45;
+        const BACK_OFFSET = HEAD_RADIUS * HEAD_SCALE_Z + 0.05;
+
+        function animate(time) {
+            if (time - lastFrameTime < FRAME_INTERVAL) {
+                animationId = requestAnimationFrame(animate);
+                return;
+            }
+            lastFrameTime = time;
+            animationId = requestAnimationFrame(animate);
+            const delta = Math.min(clock.getDelta(), 0.05);
+            const elapsed = clock.elapsedTime;
+
+            if (!isGameActive) {
+                controls.update();
+                renderer.render(scene, camera);
+                return;
+            }
+
+            updateTiles(delta, elapsed);
+            updateParticles(delta);
+            updateMelody(delta);
+            stageRing.material.opacity = 0.45 + Math.sin(elapsed * 2) * 0.2;
+
+            if (stunTime > 0) stunTime -= delta;
+
+            let angleDiff = targetDirectionAngle - currentDirectionAngle;
+            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+            const maxTurn = delta * 12;
+            if (Math.abs(angleDiff) > maxTurn) angleDiff = Math.sign(angleDiff) * maxTurn;
+            currentDirectionAngle += angleDiff;
+
+            moveDirection.x = Math.cos(currentDirectionAngle);
+            moveDirection.z = Math.sin(currentDirectionAngle);
+
+            let currentSpeed = BASE_SPEED * speedMultiplier;
+            if (stunTime > 0) {
+                currentSpeed = 0;
+            } else {
+                const tongueReach = 1.6;
+                const tipX = headPosition.x + Math.cos(currentDirectionAngle) * tongueReach;
+                const tipZ = headPosition.z + Math.sin(currentDirectionAngle) * tongueReach;
+                for (let tree of trees) {
+                    const dx = tipX - tree.x;
+                    const dz = tipZ - tree.z;
+                    const dist = Math.sqrt(dx*dx + dz*dz);
+                    if (dist < tree.r + 0.25) {
+                        stunTime = 1.5;
+                        playTone(150, 0.25, 'sawtooth', 0.2);
+                        currentSpeed = 0;
+                        break;
+                    }
+                }
+            }
+
+            const currentMoveSpeed = currentSpeed;
+            let newX = headPosition.x + moveDirection.x * currentMoveSpeed * delta;
+            let newZ = headPosition.z + moveDirection.z * currentMoveSpeed * delta;
+
+            const maxRadius = FIELD_RADIUS - 1;
+            const distFromCenter = Math.sqrt(newX*newX + newZ*newZ);
+            if (distFromCenter > maxRadius) {
+                const ratio = maxRadius / distFromCenter;
+                newX *= ratio; newZ *= ratio;
+            }
+            headPosition.x = newX;
+            headPosition.z = newZ;
+
+            let currentTile = -1;
+            for (let i = 0; i < TILE_COUNT; i++) {
+                const dx = headPosition.x - tiles[i].x;
+                const dz = headPosition.z - tiles[i].z;
+                if (dx*dx + dz*dz < 2.1 * 2.1) {
+                    currentTile = i;
+                    break;
+                }
+            }
+            if (currentTile !== -1 && currentTile !== lastTile) {
+                pressTile(currentTile);
+            }
+            lastTile = currentTile;
+
+            segmentPositions[0].x = headPosition.x - moveDirection.x * BACK_OFFSET;
+            segmentPositions[0].z = headPosition.z - moveDirection.z * BACK_OFFSET;
+            segmentPositions[1].x = segmentPositions[0].x - moveDirection.x * SEGMENT_SPACING;
+            segmentPositions[1].z = segmentPositions[0].z - moveDirection.z * SEGMENT_SPACING;
+
+            const lastPos = pathHistory[pathWriteIndex];
+            if (pathValidCount === 0 || segmentPositions[0].distanceTo(lastPos) > 0.02) {
+                pathWriteIndex = (pathWriteIndex + 1) % MAX_PATH;
+                pathHistory[pathWriteIndex].copy(segmentPositions[0]);
+                if (pathValidCount < MAX_PATH) pathValidCount++;
+            }
+
+            const cumulativeDist = [];
+            let totalDist = 0;
+            cumulativeDist.push(0);
+            for (let j = 1; j < pathValidCount; j++) {
+                const idxCurr = (pathWriteIndex - j + MAX_PATH) % MAX_PATH;
+                const idxPrev = (pathWriteIndex - j + 1 + MAX_PATH) % MAX_PATH;
+                const d = pathHistory[idxPrev].distanceTo(pathHistory[idxCurr]);
+                totalDist += d;
+                cumulativeDist.push(totalDist);
+            }
+
+            function getPointFromHistory(distFromStart) {
+                if (distFromStart <= 0) return pathHistory[pathWriteIndex].clone();
+                if (distFromStart >= cumulativeDist[cumulativeDist.length - 1]) {
+                    const lastIdx = (pathWriteIndex - cumulativeDist.length + 1 + MAX_PATH) % MAX_PATH;
+                    return pathHistory[lastIdx].clone();
+                }
+                let idx = 0;
+                while (idx < cumulativeDist.length && cumulativeDist[idx] < distFromStart) idx++;
+                if (idx === 0) return pathHistory[pathWriteIndex].clone();
+                const prevIdx = (pathWriteIndex - idx + 1 + MAX_PATH) % MAX_PATH;
+                const currIdx = (pathWriteIndex - idx + MAX_PATH) % MAX_PATH;
+                const prevDist = cumulativeDist[idx - 1];
+                const currDist = cumulativeDist[idx];
+                const t = (distFromStart - prevDist) / (currDist - prevDist);
+                const p1 = pathHistory[prevIdx];
+                const p2 = pathHistory[currIdx];
+                return new THREE.Vector3().lerpVectors(p1, p2, t);
+            }
+
+            for (let i = 2; i < SEGMENTS; i++) {
+                const distFromStart = (i - 1) * SEGMENT_SPACING;
+                const point = getPointFromHistory(distFromStart);
+                segmentPositions[i].copy(point);
+            }
+
+            if (isJumping) {
+                jumpVelocity -= GRAVITY * delta;
+                jumpHeight += jumpVelocity * delta;
+                if (jumpHeight <= 0 && jumpVelocity <= 0) {
+                    jumpHeight = 0; isJumping = false; jumpVelocity = 0;
+                }
+            }
+
+            const perpX = -moveDirection.z;
+            const perpZ = moveDirection.x;
+            for (let i = 0; i < SEGMENTS; i++) {
+                const pos = segmentPositions[i];
+                const phase = i * 0.3 - elapsed * 2.2;
+                const lateralOffset = Math.sin(phase) * 0.15;
+                let yOff = Math.sin(phase * 0.6 + i * 0.08) * 0.15 - 0.5;
+                if (isJumping || jumpHeight > 0.01) {
+                    const waveFactor = Math.max(0, 1 - (i * 0.055) / 0.6);
+                    yOff += jumpHeight * waveFactor + Math.sin(elapsed * 8 + i * 0.2) * 0.05 * waveFactor;
+                }
+                snakeBody[i].position.set(pos.x + perpX * lateralOffset, yOff, pos.z + perpZ * lateralOffset);
+            }
+
+            if (eatAnimation > 0) eatAnimation = Math.max(0, eatAnimation - delta * 2.5);
+            mouth.scale.y = 0.3 + eatAnimation * 2.5;
+            mouth.scale.x = 1.0 + eatAnimation * 0.4;
+
+            let headY = -0.3 + (isJumping ? jumpHeight : 0) + Math.sin(eatAnimation * Math.PI) * 0.08;
+            head.position.set(headPosition.x, headY, headPosition.z);
+            head.rotation.y = Math.PI / 2 - currentDirectionAngle;
+            head.rotation.x = isJumping ? -0.15 - jumpHeight * 0.08 : 0;
+            const tongueOut = Math.max(0, Math.sin(elapsed * 5) * 0.7 + 0.3) * (eatAnimation > 0.3 ? 0 : 1) * (stunTime > 0 ? 0.2 : 1);
+            tongueGroup.position.z = 1.08 + (tongueOut + (isJumping ? 0.3 : 0)) * 0.45;
+            tongueGroup.visible = tongueOut > 0.1;
+
+            _desiredCamPos.copy(headPosition).add(_cameraOffset);
+            camera.position.lerp(_desiredCamPos, 0.08);
+            cameraTarget.lerp(headPosition, 0.08);
+            controls.target.copy(cameraTarget);
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        window.showPage = function(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            isGameActive = (pageId === 'page-game');
+            const canvas = renderer.domElement;
+            if (canvas) {
+                if (pageId === 'page-game') {
+                    canvas.style.display = 'block';
+                    canvas.classList.add('game-active');
+                } else {
+                    canvas.style.display = 'none';
+                    canvas.classList.remove('game-active');
+                }
+            }
+        };
+
+        window.finishGame = function(won) {
+            if (isGameActive) {
+                isGameActive = false;
+                if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+                const label = document.getElementById('result-label');
+                const emoji = document.getElementById('result-emoji');
+                const text = document.getElementById('result-text');
+                if (won) {
+                    label.textContent = "🏆 МЕЛОДИЯ СОБРАНА!";
+                    label.style.color = "#cc99ff";
+                    emoji.textContent = "🎼";
+                    text.textContent = "Змея собрала все " + ROUND_TARGET + " мелодий! Лес аплодирует своей музыкантке!";
+                } else {
+                    label.textContent = "⏱ Время вышло!";
+                    label.style.color = "#aaccbb";
+                    emoji.textContent = "🎵";
+                    text.textContent = "Собрано мелодий: " + (round - 1) + " из " + ROUND_TARGET + ". Музыка ещё ждёт тебя! Попробуй ещё раз!";
+                    speakText("Время вышло. Собрано мелодий: " + (round - 1) + ".");
+                }
+                showPage('page-result');
+            }
+        };
+
+        window.startGame = function() {
+            initAudio();
+            round = 1;
+            document.getElementById('score').textContent = '1';
+            gameTimeLeft = MAX_TIME;
+            updateTimerDisplay();
+            speedMultiplier = 1.0;
+            stunTime = 0;
+            isGameActive = true;
+            lastTile = -1;
+
+            headPosition.set(0, 0, 0);
+            currentDirectionAngle = 0;
+            targetDirectionAngle = 0;
+
+            const spiralRadius = 0.8;
+            const spiralTurns = 3;
+            for (let i = 0; i < MAX_PATH; i++) {
+                const t = i / MAX_PATH;
+                const angle = t * spiralTurns * 2 * Math.PI;
+                const radius = spiralRadius * (1 - t * 0.3);
+                const x = Math.cos(angle) * radius;
+                const z = Math.sin(angle) * radius;
+                const dir = new THREE.Vector3(1, 0, 0);
+                pathHistory[i].set(x - dir.x * BACK_OFFSET, 0, z - dir.z * BACK_OFFSET);
+            }
+            pathWriteIndex = MAX_PATH - 1;
+            pathValidCount = MAX_PATH;
+            segmentPositions[0].set(0, 0, 0);
+            segmentPositions[1].set(0, 0, 0);
+
+            buildSequence();
+            startShow();
+            cameraTarget.set(0, 0, 0);
+            camera.position.set(0, 18, 14);
+            if (timerInterval) clearInterval(timerInterval);
+            startTimer();
+            showPage('page-game');
+            speakText("Игра началась! Слушай мелодию и повторяй её, проползая по светящимся плиткам! Остерегайся деревьев!");
+        };
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        document.getElementById('startButton').addEventListener('click', startGame);
+        animate(0);
+        console.log('✅ Игра готова к работе на всех устройствах!');
+    })();
+    </script>
+</body>
+</html>
