@@ -2,16 +2,15 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8" />
-    <!-- ✅ ИСПРАВЛЕНИЕ 1: viewport-fit=cover и максимальная совместимость -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <link rel="icon" href="favicon.ico" type="image/x-icon" />
     <title>Змея и Мелодия — музыкальные плитки</title>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.min.js"></script>
+    <!-- Стабильная версия Three.js r128 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         
-        /* ✅ ИСПРАВЛЕНИЕ 1: 100dvh вместо 100vh для корректной работы на мобильных браузерах */
         body { margin: 0; overflow: hidden; background: #050510; font-family: 'Inter', sans-serif; color: #fff; user-select: none; -webkit-touch-callout: none; touch-action: none; width: 100vw; height: 100dvh; }
         canvas { position: fixed !important; top: 0; left: 0; z-index: 1; width: 100vw; height: 100dvh; display: none; touch-action: none; }
         canvas.game-active { display: block !important; }
@@ -23,8 +22,50 @@
         #page-description { position: relative; background: #0a0a1a; overflow: hidden; }
         #page-description .bg-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; z-index: 0; filter: brightness(0.85) saturate(1.1); }
         #page-description .bg-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,20,0.75); z-index: 1; }
-        #page-description>*:not(.bg-image):not(.bg-overlay) { position: relative; z-index: 2; }
+        /* ИСПРАВЛЕНО: кнопка языка исключена, чтобы остаться absolute */
+        #page-description>*:not(.bg-image):not(.bg-overlay):not(.lang-btn-3d) { position: relative; z-index: 2; }
         .page-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, rgba(20,10,40,0.85) 0%, rgba(5,5,16,0.95) 100%); backdrop-filter: blur(8px); z-index: -1; }
+        
+        /* --- СИНЯЯ СТЕКЛЯННАЯ 3D КНОПКА (ПЕРЕКЛЮЧАТЕЛЬ ЯЗЫКА) --- */
+        .lang-btn-3d {
+            position: absolute !important;
+            top: 20px !important;
+            right: 20px !important;
+            left: auto !important;
+            margin: 0 !important;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 800;
+            color: #e0f0ff;
+            background: rgba(30, 100, 255, 0.15);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(100, 150, 255, 0.4);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 
+                0 8px 32px rgba(30, 100, 255, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                0 0 40px rgba(30, 100, 255, 0.15);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            z-index: 200 !important;
+            animation: glassPulseBlue 3s ease-in-out infinite;
+        }
+        @keyframes glassPulseBlue {
+            0%, 100% { box-shadow: 0 8px 32px rgba(100, 150, 255, 0.2), inset 0 1px 0 rgba(255,255,255,0.3), 0 0 40px rgba(100,150,255,0.15); border-color: rgba(100,150,255,0.4); }
+            50% { box-shadow: 0 8px 48px rgba(100, 150, 255, 0.4), inset 0 1px 0 rgba(255,255,255,0.5), 0 0 70px rgba(100,150,255,0.3); border-color: rgba(150,200,255,0.7); }
+        }
+        .lang-btn-3d:hover {
+            transform: translateY(-3px) scale(1.05);
+            border-color: rgba(100, 180, 255, 0.9);
+            color: #ffffff;
+            text-shadow: 0 0 12px rgba(100, 180, 255, 0.9);
+            box-shadow: 0 12px 40px rgba(30, 100, 255, 0.5), inset 0 1px 0 rgba(255,255,255,0.4), 0 0 60px rgba(30, 100, 255, 0.4);
+            animation: none;
+        }
+        .lang-btn-3d:active { transform: translateY(1px) scale(0.97); }
         
         .glass-btn-3d { position: relative; padding: 18px 48px; font-size: 18px; font-weight: 800; color: #f0e0ff; background: rgba(255,255,255,0.04); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(200,150,255,0.3); border-radius: 20px; cursor: pointer; transition: all 0.3s cubic-bezier(0.25,0.8,0.25,1); box-shadow: 0 8px 32px rgba(200,150,255,0.15), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -2px 0 rgba(0,0,0,0.2), 0 0 40px rgba(200,150,255,0.1); text-transform: uppercase; letter-spacing: 1.5px; overflow: hidden; margin: 12px; z-index: 1; animation: glassPulse 3s ease-in-out infinite; touch-action: none; }
         .glass-btn-3d::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2) 0%, transparent 60%); pointer-events: none; mix-blend-mode: overlay; animation: shineMove 6s linear infinite; }
@@ -34,7 +75,6 @@
         .glass-btn-3d:hover { transform: translateY(-4px) scale(1.03); border-color: rgba(200,150,255,0.8); color: #fff; text-shadow: 0 0 12px rgba(200,150,255,0.9); box-shadow: 0 12px 40px rgba(200,150,255,0.4), inset 0 1px 0 rgba(255,255,255,0.4), 0 0 80px rgba(200,150,255,0.3); animation: none; }
         .glass-btn-3d:active { transform: translateY(1px) scale(0.97); box-shadow: 0 4px 16px rgba(0,0,0,0.4), inset 0 2px 4px rgba(0,0,0,0.3); }
         .glass-btn-3d.secondary { color: #aaccff; border-color: rgba(100,150,255,0.3); animation: glassPulseBlue 3s ease-in-out infinite; }
-        @keyframes glassPulseBlue { 0%,100% { box-shadow: 0 8px 32px rgba(100,150,255,0.15), inset 0 1px 0 rgba(255,255,255,0.3), 0 0 40px rgba(100,150,255,0.1); border-color: rgba(100,150,255,0.3); } 50% { box-shadow: 0 8px 48px rgba(100,150,255,0.35), inset 0 1px 0 rgba(255,255,255,0.5), 0 0 70px rgba(100,150,255,0.25); border-color: rgba(150,200,255,0.6); } }
         .glass-btn-3d.secondary:hover { border-color: rgba(100,150,255,0.8); text-shadow: 0 0 12px rgba(100,150,255,0.9); box-shadow: 0 12px 40px rgba(100,150,255,0.4), inset 0 1px 0 rgba(255,255,255,0.4), 0 0 80px rgba(100,150,255,0.3); animation: none; }
         
         .touch-btn { font-size: 28px !important; padding: 12px 22px !important; margin: 4px !important; min-width: 60px; min-height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 16px !important; box-shadow: 0 4px 20px rgba(200,150,255,0.2), inset 0 1px 0 rgba(255,255,255,0.3), 0 0 30px rgba(200,150,255,0.08) !important; animation: glassPulse 3s ease-in-out infinite !important; touch-action: none !important; }
@@ -58,6 +98,29 @@
         
         .result-score { font-size: clamp(48px,10vw,80px); font-weight: 800; color: #ffdd88; text-shadow: 0 0 30px rgba(255,221,136,0.5); margin: 20px 0; }
         .result-label { font-size: 20px; color: #ccbbee; text-transform: uppercase; letter-spacing: 2px; }
+        
+        /* Награда "Красная змея" */
+        .red-snake-reward {
+            font-size: clamp(60px, 12vw, 100px) !important;
+            filter: hue-rotate(320deg) saturate(4) brightness(1.2);
+            text-shadow: 0 0 40px rgba(255, 0, 0, 0.9), 0 0 80px rgba(255, 50, 50, 0.6);
+            animation: snakeGlow 2s ease-in-out infinite alternate;
+            margin: 10px 0;
+        }
+        @keyframes snakeGlow {
+            from { text-shadow: 0 0 30px rgba(255, 0, 0, 0.6); transform: scale(1); }
+            to { text-shadow: 0 0 60px rgba(255, 50, 50, 1), 0 0 100px rgba(255, 0, 0, 0.4); transform: scale(1.05); }
+        }
+        .reward-text {
+            font-size: clamp(18px, 4vw, 26px);
+            color: #ff6666;
+            font-weight: 800;
+            text-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
         .jump-indicator { position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); color: #6f6; font-size: 16px; font-weight: bold; background: rgba(0,30,0,0.6); padding: 6px 20px; border-radius: 20px; border: 1px solid #2a5a2a; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 50; text-shadow: 0 0 10px #4caf50; }
         .jump-indicator.active { opacity: 1; }
         
@@ -69,6 +132,7 @@
             .hud-panel { font-size: 13px; padding: 8px 14px; } 
             .hud-score, .hud-timer { font-size: 18px; } 
             .glass-btn-3d { padding: 14px 32px; font-size: 16px; } 
+            .lang-btn-3d { top: 15px !important; right: 15px !important; padding: 10px 18px; font-size: 14px; }
             .touch-btn { font-size: 22px !important; padding: 10px 16px !important; min-width: 50px; min-height: 50px; } 
             #touch-controls { bottom: 80px; padding: 0 6px; gap: 4px; } 
         }
@@ -87,22 +151,24 @@
     </div>
 
     <div id="page-description" class="page active">
+        <!-- Кнопка переключения языка -->
+        <button class="lang-btn-3d" id="langToggleBtn" onclick="toggleLanguage()">RU / EN</button>
+        
         <img class="bg-image" src="foto.webp" alt="Фон" loading="lazy" onerror="this.style.display='none'">
         <div class="bg-overlay"></div>
-        <!-- ✅ ИСПРАВЛЕНИЕ 2: onerror скрывает битую иконку -->
         <img src="favicon.ico" alt="Логотип" style="width:144px;height:144px;margin-bottom:16px;border-radius:24px;box-shadow:0 0 30px rgba(200,150,255,0.4);border:2px solid rgba(255,255,255,0.2);z-index:1;" onerror="this.style.display='none'">
-        <h1 class="title-main">Змея</h1>
-        <h1 class="title-main" style="font-size:clamp(32px,7vw,56px);margin-top:-10px;">И</h1>
-        <h1 class="title-main" style="font-size:clamp(32px,7vw,56px);margin-top:-10px;">Мелодия</h1>
+        <h1 class="title-main" id="txt-title1">Змея</h1>
+        <h1 class="title-main" id="txt-title2" style="font-size:clamp(32px,7vw,56px);margin-top:-10px;">И</h1>
+        <h1 class="title-main" id="txt-title3" style="font-size:clamp(32px,7vw,56px);margin-top:-10px;">Мелодия</h1>
         <div style="flex-grow:1;"></div>
-        <button class="glass-btn-3d" id="startButton" style="margin:0 auto 16px auto;z-index:1;">▶ Начать игру</button>
+        <button class="glass-btn-3d" id="txt-startBtn" style="margin:0 auto 16px auto;z-index:1;">▶ Начать игру</button>
         <div class="support-block">
-            <span class="highlight">🤝 ПОДДЕРЖАТЬ ПРОЕКТ 💙</span>
-            <span>Приложение бесплатное.</span>
-            <span>Перевод: <strong class="phone">8-920-227-56-76</strong></span>
-            <button class="copy-btn" onclick="copyPhone()">📋 Копировать</button>
-            <span>❤️ Спасибо!</span>
-            <a href="https://ancf-hue.github.io/" target="_blank">👉 Каталог Anti-AI Shield</a>
+            <span class="highlight" id="txt-supportTitle">🤝 ПОДДЕРЖАТЬ ПРОЕКТ 💙</span>
+            <span id="txt-supportText1">Приложение бесплатное.</span>
+            <span id="txt-supportText2">Перевод: <strong class="phone">8-920-227-56-76</strong></span>
+            <button class="copy-btn" id="txt-copyBtn" onclick="copyPhone()">📋 Копировать</button>
+            <span id="txt-thanks">❤️ Спасибо!</span>
+            <a href="https://ancf-hue.github.io/" target="_blank" id="txt-catalog">👉 Каталог Anti-AI Shield</a>
         </div>
     </div>
 
@@ -110,7 +176,7 @@
         <img src="favicon.ico" alt="Логотип" style="position:absolute;top:15px;left:50%;transform:translateX(-50%);width:96px;height:96px;border-radius:16px;z-index:60;box-shadow:0 4px 12px rgba(0,0,0,0.5);border:2px solid rgba(255,255,255,0.2);" onerror="this.style.display='none'">
         <div id="game-hud">
             <div class="hud-panel" style="display:flex;align-items:center;gap:10px;">
-                <span class="hud-score">🎵 Раунд: <span id="score">1</span>/5</span>
+                <span class="hud-score">🎵 <span id="txt-hud-round-label">Раунд:</span> <span id="score">1</span>/5</span>
             </div>
             <div class="hud-panel hud-timer" id="timerDisplay">⏱ 3:00</div>
         </div>
@@ -119,7 +185,7 @@
             <div><button class="touch-btn glass-btn-3d" data-action="jump">⬆</button></div>
             <div><button class="touch-btn glass-btn-3d" data-action="forward">▲</button><button class="touch-btn glass-btn-3d" data-action="backward">▼</button></div>
         </div>
-        <div class="jump-indicator" id="jumpIndicator">⬆ ПРЫЖОК!</div>
+        <div class="jump-indicator" id="txt-jump-indicator">⬆ ПРЫЖОК!</div>
     </div>
 
     <div id="page-result" class="page">
@@ -127,10 +193,13 @@
         <img src="favicon.ico" alt="Логотип" style="width:128px;height:128px;margin-bottom:16px;border-radius:20px;box-shadow:0 4px 12px rgba(0,0,0,0.3);border:2px solid rgba(255,255,255,0.2);" onerror="this.style.display='none'">
         <div class="result-label" id="result-label">⏱ Время вышло!</div>
         <div class="result-score" id="result-emoji">🎵</div>
+        <div id="reward-container" style="display: none;">
+            <div class="reward-text" id="reward-text">🎁 Награда: Красная змея!</div>
+        </div>
         <p class="subtitle" id="result-text">Попробуйте ещё раз!</p>
         <div style="display:flex;flex-wrap:wrap;justify-content:center;">
-            <button class="glass-btn-3d" onclick="startGame()">🔄 Играть снова</button>
-            <button class="glass-btn-3d secondary" onclick="showPage('page-description')">🏠 В меню</button>
+            <button class="glass-btn-3d" id="txt-play-again" onclick="startGame()">🔄 Играть снова</button>
+            <button class="glass-btn-3d secondary" id="txt-menu" onclick="showPage('page-description')">🏠 В меню</button>
         </div>
     </div>
 
@@ -163,11 +232,89 @@
         const isSlow = isMobile || (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4);
         console.log('Режим:', isSlow ? 'энергосберегающий (мобильный/слабый)' : 'полный');
 
-        function speakText(text) {
+        // === СИСТЕМА ПЕРЕВОДА ===
+        let currentLang = 'ru';
+        const translations = {
+            ru: {
+                title1: "Змея", title2: "И", title3: "Мелодия",
+                startBtn: "▶ Начать игру",
+                supportTitle: "🤝 ПОДДЕРЖАТЬ ПРОЕКТ 💙",
+                supportText1: "Приложение бесплатное.",
+                supportText2: "Перевод:",
+                copyBtn: "📋 Копировать",
+                copiedBtn: "✅ Скопировано!",
+                thanks: "❤️ Спасибо!",
+                catalog: "👉 Каталог Anti-AI Shield",
+                hudRound: "Раунд:",
+                playAgain: "🔄 Играть снова",
+                menu: "🏠 В меню",
+                jumpIndicator: "⬆ ПРЫЖОК!",
+                winLabel: "🏆 МЕЛОДИЯ СОБРАНА!",
+                winText: "Змея собрала все {target} мелодий! Лес аплодирует своей музыкантке!",
+                rewardText: "🎁 Награда: Красная змея!",
+                loseLabel: "⏱ Время вышло!",
+                loseText: "Собрано мелодий: {score} из {target}. Музыка ещё ждёт тебя! Попробуй ещё раз!",
+                ttsWin: "Поздравляю! Змея собрала все пять мелодий! Настоящий музыкант! Награда: Красная змея!",
+                ttsLose: "Время вышло. Собрано мелодий: {score}.",
+                ttsStart: "Игра началась! Слушай мелодию и повторяй её, проползая по светящимся плиткам! Остерегайся деревьев!"
+            },
+            en: {
+                title1: "Snake", title2: "And", title3: "Melody",
+                startBtn: "▶ Start Game",
+                supportTitle: "🤝 SUPPORT THE PROJECT 💙",
+                supportText1: "The app is free.",
+                supportText2: "Transfer:",
+                copyBtn: "📋 Copy",
+                copiedBtn: "✅ Copied!",
+                thanks: "❤️ Thank you!",
+                catalog: "👉 Anti-AI Shield Catalog",
+                hudRound: "Round:",
+                playAgain: "🔄 Play Again",
+                menu: "🏠 Menu",
+                jumpIndicator: "⬆ JUMP!",
+                winLabel: "🏆 MELODY COLLECTED!",
+                winText: "The snake collected all {target} melodies! The forest applauds its musician!",
+                rewardText: "🎁 Reward: Red Snake!",
+                loseLabel: "⏱ Time's Up!",
+                loseText: "Melodies collected: {score} out of {target}. Music awaits you! Try again!",
+                ttsWin: "Congratulations! The snake collected all five melodies! A true musician! Reward: Red Snake!",
+                ttsLose: "Time is up. Melodies collected: {score}.",
+                ttsStart: "Game started! Listen to the melody and repeat it by crawling over the glowing tiles! Watch out for trees!"
+            }
+        };
+
+        window.toggleLanguage = function() {
+            currentLang = currentLang === 'ru' ? 'en' : 'ru';
+            document.getElementById('langToggleBtn').textContent = currentLang === 'ru' ? 'RU / EN' : 'EN / RU';
+            updateLanguage();
+        };
+
+        function updateLanguage() {
+            const t = translations[currentLang];
+            document.getElementById('txt-title1').textContent = t.title1;
+            document.getElementById('txt-title2').textContent = t.title2;
+            document.getElementById('txt-title3').textContent = t.title3;
+            document.getElementById('txt-startBtn').textContent = t.startBtn;
+            document.getElementById('txt-supportTitle').textContent = t.supportTitle;
+            document.getElementById('txt-supportText1').textContent = t.supportText1;
+            document.getElementById('txt-supportText2').innerHTML = `${t.supportText2} <strong class="phone">8-920-227-56-76</strong>`;
+            document.getElementById('txt-copyBtn').textContent = t.copyBtn;
+            document.getElementById('txt-thanks').textContent = t.thanks;
+            document.getElementById('txt-catalog').textContent = t.catalog;
+            document.getElementById('txt-hud-round-label').textContent = t.hudRound;
+            document.getElementById('txt-play-again').textContent = t.playAgain;
+            document.getElementById('txt-menu').textContent = t.menu;
+            document.getElementById('txt-jump-indicator').textContent = t.jumpIndicator;
+        }
+
+        function speakText(textKey) {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'ru-RU';
+                // Берём текст из словаря по ключу, либо используем как есть
+                const textToSpeak = translations[currentLang][textKey] || textKey;
+                const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                // Автоматический выбор языка озвучки
+                utterance.lang = currentLang === 'ru' ? 'ru-RU' : 'en-US';
                 utterance.rate = 1.05;
                 utterance.pitch = 1.0;
                 window.speechSynthesis.speak(utterance);
@@ -177,14 +324,13 @@
         window.copyPhone = function() {
             const phone = "8-920-227-56-76";
             navigator.clipboard.writeText(phone).then(() => {
-                const btn = document.querySelector('.copy-btn');
+                const btn = document.getElementById('txt-copyBtn');
                 if (btn) {
-                    const originalText = btn.innerHTML;
-                    btn.innerHTML = "✅ Скопировано!";
+                    btn.textContent = translations[currentLang].copiedBtn;
                     btn.style.background = "rgba(200,150,255,0.4)";
                     btn.style.color = "#ffffff";
                     setTimeout(() => {
-                        btn.innerHTML = originalText;
+                        btn.textContent = translations[currentLang].copyBtn;
                         btn.style.background = "rgba(200,150,255,0.15)";
                         btn.style.color = "#cc99ff";
                     }, 2000);
@@ -196,7 +342,7 @@
                 textArea.select();
                 document.execCommand("copy");
                 document.body.removeChild(textArea);
-                alert("Номер скопирован: " + phone);
+                alert((currentLang === 'ru' ? "Номер скопирован: " : "Number copied: ") + phone);
             });
         };
 
@@ -305,7 +451,6 @@
         document.body.appendChild(renderer.domElement);
         renderer.domElement.style.display = 'none';
 
-        // Обработка потери контекста (страховка от чёрного экрана)
         renderer.domElement.addEventListener('webglcontextlost', function(event) {
             event.preventDefault();
             isGameActive = false;
@@ -313,7 +458,6 @@
             alert('Графический контекст был потерян. Пожалуйста, обновите страницу.');
         }, false);
 
-        // OrbitControls (встроенный, как в оригинале)
         THREE.OrbitControls = function(object, domElement) {
             this.object = object; this.domElement = domElement; this.enabled = true; this.target = new THREE.Vector3();
             this.minDistance = 0; this.maxDistance = Infinity; this.minPolarAngle = 0; this.maxPolarAngle = Math.PI;
@@ -590,7 +734,7 @@
                     playRoundSound();
                     if (round >= ROUND_TARGET) {
                         playWinSound();
-                        speakText("Поздравляю! Змея собрала все пять мелодий! Настоящий музыкант!");
+                        speakText('ttsWin');
                         finishGame(true); return;
                     }
                     round++;
@@ -701,8 +845,8 @@
                 e.preventDefault();
                 if (!isJumping) {
                     playJumpSound(); isJumping = true; jumpVelocity = JUMP_SPEED; jumpHeight = 0;
-                    document.getElementById('jumpIndicator').classList.add('active');
-                    setTimeout(() => document.getElementById('jumpIndicator').classList.remove('active'), 400);
+                    document.getElementById('txt-jump-indicator').classList.add('active');
+                    setTimeout(() => document.getElementById('txt-jump-indicator').classList.remove('active'), 400);
                 }
                 return;
             }
@@ -726,8 +870,8 @@
                 jump: () => {
                     if (!isJumping && isGameActive) {
                         playJumpSound(); isJumping = true; jumpVelocity = JUMP_SPEED; jumpHeight = 0;
-                        document.getElementById('jumpIndicator').classList.add('active');
-                        setTimeout(() => document.getElementById('jumpIndicator').classList.remove('active'), 400);
+                        document.getElementById('txt-jump-indicator').classList.add('active');
+                        setTimeout(() => document.getElementById('txt-jump-indicator').classList.remove('active'), 400);
                     }
                 }
             };
@@ -736,7 +880,6 @@
                 if (!action) return;
                 const start = (e) => {
                     e.preventDefault();
-                    // ✅ ИСПРАВЛЕНИЕ 3: Гарантированный запуск аудио при первом касании кнопок на iOS
                     initAudio(); 
                     if (!isGameActive) return;
                     if (action === 'forward') { speedMultiplier = Math.min(2.0, speedMultiplier + 0.5); return; }
@@ -979,17 +1122,29 @@
                 const label = document.getElementById('result-label');
                 const emoji = document.getElementById('result-emoji');
                 const text = document.getElementById('result-text');
+                const rewardContainer = document.getElementById('reward-container');
+                const rewardText = document.getElementById('reward-text');
+                const t = translations[currentLang];
+
                 if (won) {
-                    label.textContent = "🏆 МЕЛОДИЯ СОБРАНА!";
+                    label.textContent = t.winLabel;
                     label.style.color = "#cc99ff";
-                    emoji.textContent = "🎼";
-                    text.textContent = "Змея собрала все " + ROUND_TARGET + " мелодий! Лес аплодирует своей музыкантке!";
+                    
+                    // Награда: Красная змея
+                    emoji.textContent = "🐍";
+                    emoji.className = "result-score red-snake-reward";
+                    rewardText.textContent = t.rewardText;
+                    rewardContainer.style.display = "block";
+                    
+                    text.textContent = t.winText.replace('{target}', ROUND_TARGET);
                 } else {
-                    label.textContent = "⏱ Время вышло!";
+                    label.textContent = t.loseLabel;
                     label.style.color = "#aaccbb";
                     emoji.textContent = "🎵";
-                    text.textContent = "Собрано мелодий: " + (round - 1) + " из " + ROUND_TARGET + ". Музыка ещё ждёт тебя! Попробуй ещё раз!";
-                    speakText("Время вышло. Собрано мелодий: " + (round - 1) + ".");
+                    emoji.className = "result-score";
+                    rewardContainer.style.display = "none";
+                    text.textContent = t.loseText.replace('{score}', round - 1).replace('{target}', ROUND_TARGET);
+                    speakText('ttsLose').replace('{score}', round - 1);
                 }
                 showPage('page-result');
             }
@@ -1033,7 +1188,7 @@
             if (timerInterval) clearInterval(timerInterval);
             startTimer();
             showPage('page-game');
-            speakText("Игра началась! Слушай мелодию и повторяй её, проползая по светящимся плиткам! Остерегайся деревьев!");
+            speakText('ttsStart');
         };
 
         window.addEventListener('resize', () => {
@@ -1042,9 +1197,11 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        document.getElementById('startButton').addEventListener('click', startGame);
+        // Инициализация языка и слушатель кнопки старта
+        updateLanguage();
+        document.getElementById('txt-startBtn').addEventListener('click', startGame);
         animate(0);
-        console.log('✅ Игра готова к работе на всех устройствах!');
+        console.log('✅ Игра "Змея и Мелодия" готова к работе с переводами!');
     })();
     </script>
 </body>
