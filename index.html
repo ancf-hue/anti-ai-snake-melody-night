@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <link rel="icon" href="favicon.ico" type="image/x-icon" />
     <title>Змея и Мелодия — музыкальные плитки</title>
-    <!-- Стабильная версия Three.js r128 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
@@ -22,11 +21,9 @@
         #page-description { position: relative; background: #0a0a1a; overflow: hidden; }
         #page-description .bg-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; z-index: 0; filter: brightness(0.85) saturate(1.1); }
         #page-description .bg-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,20,0.75); z-index: 1; }
-        /* ИСПРАВЛЕНО: кнопка языка исключена, чтобы остаться absolute */
         #page-description>*:not(.bg-image):not(.bg-overlay):not(.lang-btn-3d) { position: relative; z-index: 2; }
         .page-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, rgba(20,10,40,0.85) 0%, rgba(5,5,16,0.95) 100%); backdrop-filter: blur(8px); z-index: -1; }
         
-        /* --- СИНЯЯ СТЕКЛЯННАЯ 3D КНОПКА (ПЕРЕКЛЮЧАТЕЛЬ ЯЗЫКА) --- */
         .lang-btn-3d {
             position: absolute !important;
             top: 20px !important;
@@ -44,10 +41,7 @@
             border-radius: 16px;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            box-shadow: 
-                0 8px 32px rgba(30, 100, 255, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.3),
-                0 0 40px rgba(30, 100, 255, 0.15);
+            box-shadow: 0 8px 32px rgba(30, 100, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 0 40px rgba(30, 100, 255, 0.15);
             text-transform: uppercase;
             letter-spacing: 1.5px;
             z-index: 200 !important;
@@ -57,14 +51,7 @@
             0%, 100% { box-shadow: 0 8px 32px rgba(100, 150, 255, 0.2), inset 0 1px 0 rgba(255,255,255,0.3), 0 0 40px rgba(100,150,255,0.15); border-color: rgba(100,150,255,0.4); }
             50% { box-shadow: 0 8px 48px rgba(100, 150, 255, 0.4), inset 0 1px 0 rgba(255,255,255,0.5), 0 0 70px rgba(100,150,255,0.3); border-color: rgba(150,200,255,0.7); }
         }
-        .lang-btn-3d:hover {
-            transform: translateY(-3px) scale(1.05);
-            border-color: rgba(100, 180, 255, 0.9);
-            color: #ffffff;
-            text-shadow: 0 0 12px rgba(100, 180, 255, 0.9);
-            box-shadow: 0 12px 40px rgba(30, 100, 255, 0.5), inset 0 1px 0 rgba(255,255,255,0.4), 0 0 60px rgba(30, 100, 255, 0.4);
-            animation: none;
-        }
+        .lang-btn-3d:hover { transform: translateY(-3px) scale(1.05); border-color: rgba(100, 180, 255, 0.9); color: #ffffff; text-shadow: 0 0 12px rgba(100, 180, 255, 0.9); box-shadow: 0 12px 40px rgba(30, 100, 255, 0.5), inset 0 1px 0 rgba(255,255,255,0.4), 0 0 60px rgba(30, 100, 255, 0.4); animation: none; }
         .lang-btn-3d:active { transform: translateY(1px) scale(0.97); }
         
         .glass-btn-3d { position: relative; padding: 18px 48px; font-size: 18px; font-weight: 800; color: #f0e0ff; background: rgba(255,255,255,0.04); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(200,150,255,0.3); border-radius: 20px; cursor: pointer; transition: all 0.3s cubic-bezier(0.25,0.8,0.25,1); box-shadow: 0 8px 32px rgba(200,150,255,0.15), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -2px 0 rgba(0,0,0,0.2), 0 0 40px rgba(200,150,255,0.1); text-transform: uppercase; letter-spacing: 1.5px; overflow: hidden; margin: 12px; z-index: 1; animation: glassPulse 3s ease-in-out infinite; touch-action: none; }
@@ -76,6 +63,35 @@
         .glass-btn-3d:active { transform: translateY(1px) scale(0.97); box-shadow: 0 4px 16px rgba(0,0,0,0.4), inset 0 2px 4px rgba(0,0,0,0.3); }
         .glass-btn-3d.secondary { color: #aaccff; border-color: rgba(100,150,255,0.3); animation: glassPulseBlue 3s ease-in-out infinite; }
         .glass-btn-3d.secondary:hover { border-color: rgba(100,150,255,0.8); text-shadow: 0 0 12px rgba(100,150,255,0.9); box-shadow: 0 12px 40px rgba(100,150,255,0.4), inset 0 1px 0 rgba(255,255,255,0.4), 0 0 80px rgba(100,150,255,0.3); animation: none; }
+        
+        .glass-btn-3d.primary-submit {
+            color: #ffffff;
+            background: linear-gradient(135deg, rgba(255, 80, 80, 0.3), rgba(200, 40, 40, 0.2));
+            border-color: rgba(255, 120, 120, 0.9);
+            text-shadow: 0 0 15px rgba(255, 80, 80, 0.8);
+            box-shadow: 0 0 35px rgba(255, 80, 80, 0.6), 0 0 60px rgba(255, 80, 80, 0.3),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                        inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+            animation: redPulse 2s ease-in-out infinite;
+            padding: 16px 40px;
+            font-size: 17px;
+        }
+        @keyframes redPulse {
+            0%, 100% {
+                box-shadow: 0 0 35px rgba(255, 80, 80, 0.6), 0 0 60px rgba(255, 80, 80, 0.3),
+                            inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -2px 0 rgba(0,0,0,0.2);
+            }
+            50% {
+                box-shadow: 0 0 50px rgba(255, 100, 100, 0.9), 0 0 90px rgba(255, 80, 80, 0.5),
+                            inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -2px 0 rgba(0,0,0,0.2);
+            }
+        }
+        .glass-btn-3d.primary-submit:hover {
+            border-color: rgba(255, 180, 180, 1);
+            color: #ffffff;
+            animation: none;
+            box-shadow: 0 0 60px rgba(255, 100, 100, 1), 0 0 100px rgba(255, 80, 80, 0.7);
+        }
         
         .touch-btn { font-size: 28px !important; padding: 12px 22px !important; margin: 4px !important; min-width: 60px; min-height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 16px !important; box-shadow: 0 4px 20px rgba(200,150,255,0.2), inset 0 1px 0 rgba(255,255,255,0.3), 0 0 30px rgba(200,150,255,0.08) !important; animation: glassPulse 3s ease-in-out infinite !important; touch-action: none !important; }
         .touch-btn:active { transform: scale(0.92) !important; box-shadow: 0 2px 8px rgba(200,150,255,0.4), inset 0 1px 0 rgba(255,255,255,0.2) !important; }
@@ -99,7 +115,6 @@
         .result-score { font-size: clamp(48px,10vw,80px); font-weight: 800; color: #ffdd88; text-shadow: 0 0 30px rgba(255,221,136,0.5); margin: 20px 0; }
         .result-label { font-size: 20px; color: #ccbbee; text-transform: uppercase; letter-spacing: 2px; }
         
-        /* Награда "Красная змея" */
         .red-snake-reward {
             font-size: clamp(60px, 12vw, 100px) !important;
             filter: hue-rotate(320deg) saturate(4) brightness(1.2);
@@ -127,6 +142,14 @@
         #touch-controls { position: absolute; bottom: 90px; left: 0; right: 0; display: flex; justify-content: space-around; align-items: center; padding: 0 12px; z-index: 55; pointer-events: none; flex-wrap: wrap; gap: 6px; }
         #touch-controls > div { pointer-events: auto; display: flex; gap: 8px; align-items: center; }
         
+        .confetti {
+            position: fixed;
+            top: -10px;
+            z-index: 9999;
+            pointer-events: none;
+            border-radius: 2px;
+        }
+        
         @media (max-width:700px) { 
             #game-hud { flex-direction: row; flex-wrap: wrap; justify-content: space-between; } 
             .hud-panel { font-size: 13px; padding: 8px 14px; } 
@@ -151,7 +174,6 @@
     </div>
 
     <div id="page-description" class="page active">
-        <!-- Кнопка переключения языка -->
         <button class="lang-btn-3d" id="langToggleBtn" onclick="toggleLanguage()">RU / EN</button>
         
         <img class="bg-image" src="foto.webp" alt="Фон" loading="lazy" onerror="this.style.display='none'">
@@ -161,7 +183,7 @@
         <h1 class="title-main" id="txt-title2" style="font-size:clamp(32px,7vw,56px);margin-top:-10px;">И</h1>
         <h1 class="title-main" id="txt-title3" style="font-size:clamp(32px,7vw,56px);margin-top:-10px;">Мелодия</h1>
         <div style="flex-grow:1;"></div>
-        <button class="glass-btn-3d" id="txt-startBtn" style="margin:0 auto 16px auto;z-index:1;">▶ Начать игру</button>
+        <button class="glass-btn-3d" id="txt-startBtn" style="margin:0 auto 16px auto;z-index:1;">▶ На старт!</button>
         <div class="support-block">
             <span class="highlight" id="txt-supportTitle">🤝 ПОДДЕРЖАТЬ ПРОЕКТ 💙</span>
             <span id="txt-supportText1">Приложение бесплатное.</span>
@@ -193,18 +215,31 @@
         <img src="favicon.ico" alt="Логотип" style="width:128px;height:128px;margin-bottom:16px;border-radius:20px;box-shadow:0 4px 12px rgba(0,0,0,0.3);border:2px solid rgba(255,255,255,0.2);" onerror="this.style.display='none'">
         <div class="result-label" id="result-label">⏱ Время вышло!</div>
         <div class="result-score" id="result-emoji">🎵</div>
-        <div id="reward-container" style="display: none;">
+        
+        <div id="win-block" style="display: none; text-align: center; width: 100%; max-width: 500px;">
             <div class="reward-text" id="reward-text">🎁 Награда: Красная змея!</div>
+            <p class="subtitle" id="result-text-win">Змея собрала все 5 мелодий!</p>
+            
+            <button class="glass-btn-3d primary-submit" id="txt-goToBoard" onclick="goToLeaderboard()">
+                🏆 Отправить на Доску почёта →
+            </button>
+            
+            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 8px;">
+                <button class="glass-btn-3d secondary" id="txt-playAgain2" onclick="startGame()" style="padding: 12px 24px; font-size: 14px;">🔄 Ещё раз</button>
+                <button class="glass-btn-3d secondary" id="txt-menu2" onclick="showPage('page-description')" style="padding: 12px 24px; font-size: 14px;">🏠 В меню</button>
+            </div>
         </div>
-        <p class="subtitle" id="result-text">Попробуйте ещё раз!</p>
-        <div style="display:flex;flex-wrap:wrap;justify-content:center;">
-            <button class="glass-btn-3d" id="txt-play-again" onclick="startGame()">🔄 Играть снова</button>
-            <button class="glass-btn-3d secondary" id="txt-menu" onclick="showPage('page-description')">🏠 В меню</button>
+
+        <div id="lose-block" style="display: none; text-align: center;">
+            <p class="subtitle" id="result-text-lose">Собрано мелодий: 0 из 5. Попробуйте ещё раз!</p>
+            <div style="display: flex; flex-wrap: wrap; justify-content: center; margin-top: 20px;">
+                <button class="glass-btn-3d" id="txt-playAgain" onclick="startGame()">🔄 Играть снова</button>
+                <button class="glass-btn-3d secondary" id="txt-menu" onclick="showPage('page-description')">🏠 В меню</button>
+            </div>
         </div>
     </div>
 
     <script>
-    // === Проверка WebGL до загрузки игры ===
     (function checkWebGL() {
         try {
             const canvas = document.createElement('canvas');
@@ -219,7 +254,6 @@
         }
     })();
 
-    // === Основной скрипт ===
     (function main() {
         if (typeof THREE === 'undefined') {
             alert('Не удалось загрузить библиотеку Three.js. Проверьте подключение к интернету.');
@@ -228,16 +262,20 @@
 
         console.log('🟢 Игра "Змея и Мелодия" инициализируется...');
 
+        // ✅ КОНСТАНТЫ ДЛЯ ИНТЕГРАЦИИ С ДОСКОЙ ПОЧЁТА
+        const MAIN_LEADERBOARD_URL = "https://anti-ii-zmeya-vse-igry.vercel.app/";
+        const GAME_NAME_FOR_BOARD = "🐍 - 🎵 Змея и Мелодия";
+        const REWARD_SNAKES_ON_WIN = 1;
+
         const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth < 768;
         const isSlow = isMobile || (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4);
         console.log('Режим:', isSlow ? 'энергосберегающий (мобильный/слабый)' : 'полный');
 
-        // === СИСТЕМА ПЕРЕВОДА ===
         let currentLang = 'ru';
         const translations = {
             ru: {
                 title1: "Змея", title2: "И", title3: "Мелодия",
-                startBtn: "▶ Начать игру",
+                startBtn: "▶ На старт!",
                 supportTitle: "🤝 ПОДДЕРЖАТЬ ПРОЕКТ 💙",
                 supportText1: "Приложение бесплатное.",
                 supportText2: "Перевод:",
@@ -247,20 +285,22 @@
                 catalog: "👉 Каталог Anti-AI Shield",
                 hudRound: "Раунд:",
                 playAgain: "🔄 Играть снова",
+                playAgain2: "🔄 Ещё раз",
                 menu: "🏠 В меню",
                 jumpIndicator: "⬆ ПРЫЖОК!",
-                winLabel: "🏆 МЕЛОДИЯ СОБРАНА!",
-                winText: "Змея собрала все {target} мелодий! Лес аплодирует своей музыкантке!",
+                resultWinLabel: "🏆 ПОБЕДА!",
+                resultWinText: "Змея собрала все {target} мелодий! Лес аплодирует своей музыкантке!",
                 rewardText: "🎁 Награда: Красная змея!",
-                loseLabel: "⏱ Время вышло!",
-                loseText: "Собрано мелодий: {score} из {target}. Музыка ещё ждёт тебя! Попробуй ещё раз!",
-                ttsWin: "Поздравляю! Змея собрала все пять мелодий! Настоящий музыкант! Награда: Красная змея!",
+                goToLeaderboard: "🏆 Отправить на Доску почёта →",
+                resultLoseLabel: "⏱ Время вышло!",
+                resultLoseText: "Собрано мелодий: {score} из {target}. Музыка ещё ждёт тебя!",
+                ttsWin: "Поздравляю! Змея собрала все пять мелодий! Настоящий музыкант!",
                 ttsLose: "Время вышло. Собрано мелодий: {score}.",
-                ttsStart: "Игра началась! Слушай мелодию и повторяй её, проползая по светящимся плиткам! Остерегайся деревьев!"
+                ttsStart: "Игра началась! Слушай мелодию и повторяй её, проползая по светящимся плиткам!"
             },
             en: {
                 title1: "Snake", title2: "And", title3: "Melody",
-                startBtn: "▶ Start Game",
+                startBtn: "▶ Start!",
                 supportTitle: "🤝 SUPPORT THE PROJECT 💙",
                 supportText1: "The app is free.",
                 supportText2: "Transfer:",
@@ -270,16 +310,18 @@
                 catalog: "👉 Anti-AI Shield Catalog",
                 hudRound: "Round:",
                 playAgain: "🔄 Play Again",
+                playAgain2: "🔄 Again",
                 menu: "🏠 Menu",
                 jumpIndicator: "⬆ JUMP!",
-                winLabel: "🏆 MELODY COLLECTED!",
-                winText: "The snake collected all {target} melodies! The forest applauds its musician!",
+                resultWinLabel: "🏆 VICTORY!",
+                resultWinText: "The snake collected all {target} melodies! The forest applauds its musician!",
                 rewardText: "🎁 Reward: Red Snake!",
-                loseLabel: "⏱ Time's Up!",
-                loseText: "Melodies collected: {score} out of {target}. Music awaits you! Try again!",
-                ttsWin: "Congratulations! The snake collected all five melodies! A true musician! Reward: Red Snake!",
+                goToLeaderboard: "🏆 To Hall of Fame →",
+                resultLoseLabel: "⏱ Time's Up!",
+                resultLoseText: "Melodies collected: {score} out of {target}. Music awaits you!",
+                ttsWin: "Congratulations! The snake collected all five melodies! A true musician!",
                 ttsLose: "Time is up. Melodies collected: {score}.",
-                ttsStart: "Game started! Listen to the melody and repeat it by crawling over the glowing tiles! Watch out for trees!"
+                ttsStart: "Game started! Listen to the melody and repeat it by crawling over the glowing tiles!"
             }
         };
 
@@ -302,18 +344,19 @@
             document.getElementById('txt-thanks').textContent = t.thanks;
             document.getElementById('txt-catalog').textContent = t.catalog;
             document.getElementById('txt-hud-round-label').textContent = t.hudRound;
-            document.getElementById('txt-play-again').textContent = t.playAgain;
+            document.getElementById('txt-playAgain').textContent = t.playAgain;
+            document.getElementById('txt-playAgain2').textContent = t.playAgain2;
             document.getElementById('txt-menu').textContent = t.menu;
+            document.getElementById('txt-menu2').textContent = t.menu;
+            document.getElementById('txt-goToBoard').textContent = t.goToLeaderboard;
             document.getElementById('txt-jump-indicator').textContent = t.jumpIndicator;
         }
 
         function speakText(textKey) {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
-                // Берём текст из словаря по ключу, либо используем как есть
                 const textToSpeak = translations[currentLang][textKey] || textKey;
                 const utterance = new SpeechSynthesisUtterance(textToSpeak);
-                // Автоматический выбор языка озвучки
                 utterance.lang = currentLang === 'ru' ? 'ru-RU' : 'en-US';
                 utterance.rate = 1.05;
                 utterance.pitch = 1.0;
@@ -344,6 +387,28 @@
                 document.body.removeChild(textArea);
                 alert((currentLang === 'ru' ? "Номер скопирован: " : "Number copied: ") + phone);
             });
+        };
+
+        // ✅ СОЗДАНИЕ ПОДПИСАННОГО ТОКЕНА ДЛЯ ДОСКИ ПОЧЁТА
+        function createSignedToken(game, snakes) {
+            const nonce = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+            const timestamp = Date.now();
+            const data = { g: game, s: snakes, t: timestamp, n: nonce };
+            const sig = btoa(unescape(encodeURIComponent(
+                data.g + '|' + data.s + '|' + data.t + '|' + data.n + '|AntonKuznetsovSnakeProject2026'
+            )));
+            data.sig = sig;
+            return btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+        }
+
+        // ✅ ПЕРЕХОД НА ДОСКУ ПОЧЁТА С ТОКЕНОМ
+        window.goToLeaderboard = function() {
+            const token = createSignedToken(GAME_NAME_FOR_BOARD, REWARD_SNAKES_ON_WIN);
+            const targetUrl = MAIN_LEADERBOARD_URL + "?reward=" + token;
+            const newWindow = window.open(targetUrl, '_blank');
+            if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+                window.location.href = targetUrl;
+            }
         };
 
         let audioCtx = null;
@@ -405,6 +470,28 @@
         document.addEventListener('click', () => initAudio(), { once: true });
         document.addEventListener('keydown', () => initAudio(), { once: true });
         document.addEventListener('touchstart', () => initAudio(), { once: true, passive: true });
+
+        function startConfetti() {
+            const colors = ['#ff0000', '#ff4444', '#ffdd00', '#4cff80', '#ffffff', '#ff8800', '#4488ff', '#cc99ff'];
+            for (let i = 0; i < 120; i++) {
+                const conf = document.createElement('div');
+                conf.className = 'confetti';
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.width = (Math.random() * 10 + 5) + 'px';
+                conf.style.height = (Math.random() * 10 + 5) + 'px';
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.transition = `top ${Math.random() * 2 + 2}s linear, transform ${Math.random() * 2 + 2}s linear, opacity 2s`;
+                document.body.appendChild(conf);
+
+                setTimeout(() => {
+                    conf.style.top = '110vh';
+                    conf.style.transform = `rotate(${Math.random() * 720}deg) translateX(${(Math.random() - 0.5) * 200}px)`;
+                    conf.style.opacity = '0';
+                }, 50);
+
+                setTimeout(() => conf.remove(), 4500);
+            }
+        }
 
         let round = 1;
         const ROUND_TARGET = 5;
@@ -735,7 +822,8 @@
                     if (round >= ROUND_TARGET) {
                         playWinSound();
                         speakText('ttsWin');
-                        finishGame(true); return;
+                        finishGame(true);
+                        return;
                     }
                     round++;
                     document.getElementById('score').textContent = round;
@@ -914,7 +1002,7 @@
                 updateTimerDisplay();
                 if (gameTimeLeft <= 0) {
                     clearInterval(timerInterval); timerInterval = null;
-                    finishGame(false);
+                    finishGame(false, 'time');
                 }
             }, 1000);
         }
@@ -1115,36 +1203,40 @@
             }
         };
 
-        window.finishGame = function(won) {
+        window.finishGame = function(won, reason) {
             if (isGameActive) {
                 isGameActive = false;
                 if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
                 const label = document.getElementById('result-label');
                 const emoji = document.getElementById('result-emoji');
-                const text = document.getElementById('result-text');
-                const rewardContainer = document.getElementById('reward-container');
-                const rewardText = document.getElementById('reward-text');
+                const winBlock = document.getElementById('win-block');
+                const loseBlock = document.getElementById('lose-block');
                 const t = translations[currentLang];
 
                 if (won) {
-                    label.textContent = t.winLabel;
+                    label.textContent = t.resultWinLabel;
                     label.style.color = "#cc99ff";
-                    
-                    // Награда: Красная змея
+
                     emoji.textContent = "🐍";
                     emoji.className = "result-score red-snake-reward";
-                    rewardText.textContent = t.rewardText;
-                    rewardContainer.style.display = "block";
-                    
-                    text.textContent = t.winText.replace('{target}', ROUND_TARGET);
+                    document.getElementById('reward-text').textContent = t.rewardText;
+                    document.getElementById('result-text-win').textContent = t.resultWinText.replace('{target}', ROUND_TARGET);
+
+                    winBlock.style.display = 'block';
+                    loseBlock.style.display = 'none';
+
+                    startConfetti();
                 } else {
-                    label.textContent = t.loseLabel;
+                    label.textContent = t.resultLoseLabel;
                     label.style.color = "#aaccbb";
                     emoji.textContent = "🎵";
                     emoji.className = "result-score";
-                    rewardContainer.style.display = "none";
-                    text.textContent = t.loseText.replace('{score}', round - 1).replace('{target}', ROUND_TARGET);
-                    speakText('ttsLose').replace('{score}', round - 1);
+                    document.getElementById('result-text-lose').textContent = t.resultLoseText.replace('{score}', round - 1).replace('{target}', ROUND_TARGET);
+
+                    winBlock.style.display = 'none';
+                    loseBlock.style.display = 'block';
+
+                    speakText('ttsLose');
                 }
                 showPage('page-result');
             }
@@ -1197,11 +1289,10 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // Инициализация языка и слушатель кнопки старта
         updateLanguage();
         document.getElementById('txt-startBtn').addEventListener('click', startGame);
         animate(0);
-        console.log('✅ Игра "Змея и Мелодия" готова к работе с переводами!');
+        console.log('✅ Игра "Змея и Мелодия" готова к работе с интеграцией доски почёта!');
     })();
     </script>
 </body>
